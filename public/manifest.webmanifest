@@ -1,0 +1,16 @@
+{
+  "name": "Resume Match",
+  "short_name": "Resume Match",
+  "description": "Score your resume against any job: ATS check, keyword match, job fit, and a tailored resume to download.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F4FB",
+  "theme_color": "#16133A",
+  "icons": [
+    {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
