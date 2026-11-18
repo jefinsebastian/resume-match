@@ -16,11 +16,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 /* Layout: guided app. Setup view (resume + job side by side) → scanning overlay → results view
    (ink hero band with the fit gauge, four score cards, tabbed detail). Signature: highlighter marks
@@ -363,16 +358,35 @@ const bandColor = s => `var(--${band(s)})`;
 function store(get, key, val){ try{ if(get) return localStorage.getItem(key); if(val===null) localStorage.removeItem(key); else localStorage.setItem(key,val);}catch(e){ return null; } }
 
 /* ---------- file reading ---------- */
+/* Heavy libraries load only when needed (first PDF/Word upload or first download), then come from cache. */
+const CDN = "https://cdnjs.cloudflare.com/ajax/libs/";
+const LIBS = {
+  pdf: [CDN+"pdf.js/3.11.174/pdf.min.js", CDN+"pdf.js/3.11.174/pdf.worker.min.js"],
+  mammoth: [CDN+"mammoth/1.6.0/mammoth.browser.min.js"],
+  jszip: [CDN+"jszip/3.10.1/jszip.min.js"],
+  jspdf: [CDN+"jspdf/2.5.1/jspdf.umd.min.js"]
+};
+const _scripts = {};
+function loadScript(src){
+  return _scripts[src] || (_scripts[src] = new Promise((res, rej)=>{
+    const s = document.createElement("script"); s.src = src; s.async = false;
+    s.onload = res; s.onerror = ()=>{ delete _scripts[src]; s.remove(); rej(new Error("Part of the app didn't download. Check your connection and try again.")); };
+    document.head.appendChild(s);
+  }));
+}
+async function need(name){ for (const u of LIBS[name]) await loadScript(u); }
 async function readFile(file){
   const name = file.name.toLowerCase();
   if (name.endsWith(".txt")) return {text: await file.text(), type:"txt"};
   const buf = await file.arrayBuffer();
   if (name.endsWith(".docx")) {
+    await need("mammoth");
     if (!window.mammoth) throw new Error("The Word reader didn't load. Paste your resume text instead.");
     const r = await mammoth.extractRawText({arrayBuffer: buf});
     return {text: r.value, type:"docx"};
   }
   if (name.endsWith(".pdf")) {
+    await need("pdf");
     if (!window.pdfjsLib) throw new Error("The PDF reader didn't load. Paste your resume text instead.");
     const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported:false}).promise;
     let out = [];
@@ -490,7 +504,7 @@ function compute(resume, ai, fileType){
 /* ---------- Claude ---------- */
 function hashStr(s){ let x=5381; for (let i=0;i<s.length;i++) x=((x<<5)+x+s.charCodeAt(i))|0; return (x>>>0).toString(36); }
 function buildPrompt(resume, jd, region, link, fixedKw){
-  return `You are a senior recruiter and ATS specialist. Compare the RESUME with the JOB DESCRIPTION and return ONLY a JSON object, no prose and no code fences.
+  return `You are a senior recruiter and ATS specialist. Compare the RESUME with the JOB DESCRIPTION and return ONLY a minified JSON object (no indentation or line breaks), no prose and no code fences.
 
 Rules:
 - Be strict and evidence-based. Credit only what the resume actually shows.
@@ -534,14 +548,15 @@ JOB LINK: ${link || "not given"}
 
 JOB DESCRIPTION:
 """
-${jd.slice(0,14000)}
+${compact(jd).slice(0,14000)}
 """
 
 RESUME:
 """
-${resume.slice(0,16000)}
+${compact(resume).slice(0,16000)}
 """`;
 }
+function compact(s){ return String(s||"").replace(/[ \t\u00A0]+/g," ").replace(/ *\n */g,"\n").replace(/\n{3,}/g,"\n\n").trim(); }
 function parseJSON(t){
   t = String(t||"").trim().replace(/^```(?:json)?/i,"").replace(/```$/,"").trim();
   const a = t.indexOf("{"), b = t.lastIndexOf("}");
@@ -561,17 +576,19 @@ function askPasscode(wrong){
     $("#lock-cancel").onclick = () => done(null);
   });
 }
-async function askClaude(prompt, _retry){
+async function askClaude(prompt, kind, _retry){
   if (!navigator.onLine) throw new Error("You're offline. Connect to the internet and try again.");
   let r;
   try {
-    r = await fetch("/api/claude", {method:"POST", headers:{"content-type":"application/json","x-app-key":getPasscode()}, body: JSON.stringify({prompt})});
-  } catch(e){ throw new Error("Couldn't reach the server. Check your connection and try again."); }
+    const ac = new AbortController(), timer = setTimeout(()=>ac.abort(), 150000);
+    r = await fetch("/api/claude", {method:"POST", signal: ac.signal, headers:{"content-type":"application/json","x-app-key":getPasscode()}, body: JSON.stringify({prompt, kind})});
+    clearTimeout(timer);
+  } catch(e){ throw new Error(e && e.name==="AbortError" ? "This is taking too long. Try again in a moment." : "Couldn't reach the server. Check your connection and try again."); }
   if (r.status === 401) {
     if (_retry === 2) throw new Error("Wrong passcode.");
     const p = await askPasscode(!!getPasscode());
     if (!p) throw new Error("A passcode is needed to run the analysis.");
-    return askClaude(prompt, (_retry||0)+1);
+    return askClaude(prompt, kind, (_retry||0)+1);
   }
   let d = {}; try { d = await r.json(); } catch(e){}
   if (r.status === 429) throw new Error("Too many requests right now. Wait a minute and try again.");
@@ -644,6 +661,7 @@ function render(R, meta){
   const tabs = [["overview","Overview",0],["keywords","Keywords",missing],["ats","ATS & health",atsIssues],["improve","Improve & download",0],["prep","Interview prep",0]];
 
   $("#results").innerHTML = `
+  ${meta.cached?`<div class="banner" style="background:var(--accent-soft);color:var(--ink)"><span>Same resume and job as before, so this loaded instantly and cost nothing.</span><button class="btn" id="rescore" style="background:var(--ink);color:var(--bg);border-color:var(--ink)">Score again with AI</button></div>`:""}
   ${meta.example?`<div class="banner"><span>This is an <strong>example report</strong> for a sample candidate. Score your own resume to replace it.</span><button class="btn" id="ex-start">Score my resume →</button></div>`:""}
   <div class="hero">
     ${gauge(R.overall)}
@@ -759,6 +777,7 @@ function render(R, meta){
   $("#kwf").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; kwFilter=b.dataset.f; document.querySelectorAll("#kwf .btn").forEach(x=>x.classList.toggle("on",x===b)); renderKw(R); });
   $("#copykw").addEventListener("click", e=> copy(R.kw.rows.filter(r=>!r.found).map(r=>r.term).join(", "), e.target));
   document.querySelectorAll("#results .cp").forEach(b=>b.addEventListener("click",()=>copy(b.dataset.t,b)));
+  if ($("#rescore")) $("#rescore").addEventListener("click", ()=>{ showView("setup"); runScore(true); });
   if ($("#ex-start")) $("#ex-start").addEventListener("click", ()=>showView("setup"));
   $("#build").addEventListener("click", buildTailored);
   $("#dl-docx").addEventListener("click", e=>download("docx", e.currentTarget));
@@ -845,7 +864,7 @@ function tailorPrompt(){
   const declined = kw.filter(r=>!r.found && A[r.term] && A[r.term].have===false).map(r=>r.term);
   const addable = kw.filter(r=>!r.found && !(A[r.term] && A[r.term].have!=null) && r.likely_have==="yes").map(r=>r.term);
   const qa = (ai.questions||[]).map((q,i)=>[q.q,(CTX.answers.q||{})[i]]).filter(x=>x[1]&&x[1].trim());
-  return `You are an expert resume writer. Rewrite the ORIGINAL RESUME into a complete resume tailored to the JOB DESCRIPTION. Return ONLY a JSON object, no prose, no code fences.
+  return `You are an expert resume writer. Rewrite the ORIGINAL RESUME into a complete resume tailored to the JOB DESCRIPTION. Return ONLY a minified JSON object (no indentation or line breaks), no prose, no code fences.
 
 Hard rules:
 - Keep every employer, job title, date, degree, school and certification exactly as in the original. Do not add jobs, tools, numbers, clients or results unless the original states them or the candidate confirmed them below. Do not use placeholders like [X%].
@@ -881,12 +900,12 @@ Leave arrays empty when the original has nothing for them.
 
 JOB DESCRIPTION:
 """
-${CTX.jd.slice(0,12000)}
+${compact(CTX.jd).slice(0,12000)}
 """
 
 ORIGINAL RESUME:
 """
-${CTX.resume.slice(0,16000)}
+${compact(CTX.resume).slice(0,16000)}
 """`;
 }
 function resumeToText(T){
@@ -904,7 +923,7 @@ async function buildTailored(){
   terr.classList.add("hidden");
   btn.disabled=true; btn.textContent="Writing your resume… (about a minute)";
   try {
-    const T = await askClaude(tailorPrompt());
+    const T = await askClaude(tailorPrompt(), "tailor");
     if (!T || !T.name || !Array.isArray(T.experience)) throw new Error("The resume came back incomplete. Try again.");
     TAILORED = T;
     if (!CTX.example) { try { const last = JSON.parse(store(true,"rms.last")||"null"); if (last){ last.tailored=T; last.answers=CTX.answers; store(false,"rms.last",JSON.stringify(last)); } } catch(e){} }
@@ -982,6 +1001,7 @@ function buildDocxXml(T){
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${P.join("")}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="900" w:right="${MAR}" w:bottom="900" w:left="${MAR}" w:header="500" w:footer="500" w:gutter="0"/></w:sectPr></w:body></w:document>`;
 }
 async function buildDocx(T){
+  await need("jszip");
   if (!window.JSZip) throw new Error("The Word builder didn't load. Reload the page and try again.");
   const z = new JSZip();
   z.file("[Content_Types].xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`);
@@ -995,7 +1015,8 @@ async function buildDocx(T){
 
 /* PDF: real text (not an image), Helvetica, single column */
 function ps(s){ return String(s??"").replace(/₹\s?/g,"INR ").replace(/[–—]/g,"-").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[•●▪]/g,"-").replace(/…/g,"...").replace(/[^\x00-\xFF]/g,""); }
-function buildPdf(T){
+async function buildPdf(T){
+  await need("jspdf");
   if (!window.jspdf) throw new Error("The PDF builder didn't load. Reload the page and try again.");
   const doc = new window.jspdf.jsPDF({unit:"pt", format:"a4"});
   const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 50, TW = W-2*M;
@@ -1055,7 +1076,7 @@ async function download(kind, btn){
   const label = btn.textContent;
   try {
     btn.disabled = true; btn.textContent = "Preparing…";
-    const blob = kind==="docx" ? await buildDocx(TAILORED) : buildPdf(TAILORED);
+    const blob = kind==="docx" ? await buildDocx(TAILORED) : await buildPdf(TAILORED);
     const name = `${fileBase()}.${kind}`;
     const type = kind==="docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "application/pdf";
     const file = new File([blob], name, {type});
@@ -1144,7 +1165,16 @@ $("#resume").addEventListener("change", ()=>{ persist(); refreshSteps(); if ($("
 function showErr(m){ const el=$("#err"); el.textContent=m; el.classList.toggle("hidden",!m); }
 function step(n){ document.querySelectorAll("#progress .st").forEach(el=>{ const s=+el.dataset.s; el.className = "st" + (s<n?" done":s===n?" on":""); }); }
 
-$("#go").addEventListener("click", async ()=>{
+function resKey(resume, jd, region){ return "rms.res." + hashStr(compact(resume) + "\u0001" + compact(jd) + "\u0001" + region); }
+function cacheResult(key, ai){
+  store(false, key, JSON.stringify(ai));
+  let idx = []; try { idx = JSON.parse(store(true,"rms.resIdx")||"[]"); } catch(e){}
+  idx = [key, ...idx.filter(k=>k!==key)];
+  idx.slice(8).forEach(k=>store(false,k,null));       // keep the 8 most recent
+  store(false,"rms.resIdx",JSON.stringify(idx.slice(0,8)));
+}
+$("#go").addEventListener("click", ()=>runScore(false));
+async function runScore(force){
   showErr("");
   const resume = $("#resume").value.trim(), jd = $("#jd").value.trim(), link = $("#jdlink").value.trim(), region = getRegion();
   if (resume.length < 200) { showErr("Add your resume first: upload a PDF or .docx, or paste the text."); return; }
@@ -1153,12 +1183,15 @@ $("#go").addEventListener("click", async ()=>{
   const btn = $("#go"); btn.disabled = true;
   $("#scan").classList.remove("hidden");
   try {
-    step(0); await new Promise(r=>setTimeout(r,400));
-    step(1); await new Promise(r=>setTimeout(r,400));
+    step(0); await new Promise(r=>setTimeout(r,250));
+    step(1); await new Promise(r=>setTimeout(r,250));
     step(2);
     const kwKey = "rms.kw." + hashStr(jd.replace(/\s+/g," ").trim());
     let fixedKw = null; try { fixedKw = JSON.parse(store(true,kwKey)||"null"); } catch(e){}
-    const ai = await askClaude(buildPrompt(resume, jd, region, link, fixedKw));
+    const rk = resKey(resume, jd, region);
+    let ai = null, cached = false;
+    if (!force) { try { ai = JSON.parse(store(true, rk)||"null"); cached = !!ai; } catch(e){} }
+    if (!ai) { ai = await askClaude(buildPrompt(resume, jd, region, link, fixedKw), "score"); cacheResult(rk, ai); }
     if (fixedKw && fixedKw.length) {
       const byTerm = {}; (ai.keywords||[]).forEach(k=>{ byTerm[String(k.term).toLowerCase()] = k; });
       ai.keywords = fixedKw.map(k=>({...k, likely_have: (byTerm[String(k.term).toLowerCase()]||{}).likely_have || k.likely_have}));
@@ -1171,10 +1204,11 @@ $("#go").addEventListener("click", async ()=>{
     activeTab = "overview";
     await new Promise(r=>setTimeout(r,300));
     $("#scan").classList.add("hidden");
-    render(R, {link, region});
-  } catch(e){ $("#scan").classList.add("hidden"); showErr(e.message); }
+    render(R, {link, region, cached});
+  } catch(e){ $("#scan").classList.add("hidden"); showViewSafe(); showErr(e.message); }
   finally { btn.disabled=false; }
-});
+}
+function showViewSafe(){ if ($("#setup").classList.contains("hidden")) showView("setup"); }
 
 /* ---------- example (shown until you run your own) ---------- */
 const EX_RESUME = `Example Candidate

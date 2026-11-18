@@ -16,6 +16,7 @@ Score your resume against any job description: ATS check, keyword match, job fit
    - `ANTHROPIC_API_KEY`: your key from console.anthropic.com
    - `APP_PASSCODE`: any passcode. The app asks for it once on each device.
    - `ANTHROPIC_MODEL` (optional): defaults to `claude-sonnet-5-5`
+   - `SCORE_MODEL` / `TAILOR_MODEL` (optional): use a different model for scoring or for resume writing, for example a cheaper Haiku model for scoring
 3. Every push to `main` redeploys automatically.
 4. Optional custom domain: go to **Settings → Domains & Routes → Add → Custom domain**, for example `resume.jefinsebastian.com`.
 
@@ -27,6 +28,9 @@ The Worker name in `wrangler.jsonc` must match the Worker's name in Cloudflare (
 - **iPhone (Safari):** open the site, then tap **Share → Add to Home Screen**.
 
 ## Cost
+
+Scoring the same resume against the same job again loads the saved result instantly, at no cost. Tap "Score again with AI" to force a fresh score.
+
 
 You pay Anthropic per use. One score plus one tailored resume is roughly 10–15k input tokens and 4–6k output tokens on Sonnet, which comes to a few rupees per job. Set a monthly spend limit in the Anthropic console.
 
