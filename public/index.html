@@ -745,6 +745,11 @@ function render(R, meta){
         <div class="panel">
           <h3 class="stepttl"><span class="num" style="width:28px;height:28px;font-size:12px">2</span> Build and download</h3>
           <p class="hint" style="margin:6px 0 12px">Same employers, dates and facts, plus what you confirmed. Single column and ATS-safe.</p>
+          <div class="field" style="margin-bottom:12px">
+            <label for="li">LinkedIn profile</label>
+            <input type="url" id="li" placeholder="https://www.linkedin.com/in/your-name" autocomplete="url">
+            <label class="check"><input type="checkbox" id="li-on" checked> Add it to my resume as a clickable link</label>
+          </div>
           <div class="tailor-actions">
             <button class="btn solid" id="build">${TAILORED?"Rebuild with my answers":"Build tailored resume"}</button>
             <button class="btn" id="dl-docx" ${TAILORED?"":"disabled"}>⬇ .docx</button>
@@ -782,7 +787,7 @@ function render(R, meta){
   $("#build").addEventListener("click", buildTailored);
   $("#dl-docx").addEventListener("click", e=>download("docx", e.currentTarget));
   $("#dl-pdf").addEventListener("click", e=>download("pdf", e.currentTarget));
-  renderConfirm(); wireConfirm();
+  renderConfirm(); wireConfirm(); initLinkedIn();
   if (TAILORED) showTailored();
   showView("results");
   showTab(activeTab);
@@ -931,6 +936,39 @@ async function buildTailored(){
   } catch(e){ terr.textContent=e.message; terr.classList.remove("hidden"); }
   finally { btn.disabled=false; btn.textContent = TAILORED ? "Rebuild with my answers" : "Build tailored resume"; }
 }
+/* ---------- contact line with clickable links ---------- */
+const LI_RE = /(?:https?:\/\/)?(?:[a-z]{2,3}\.)?linkedin\.com\/in\/[^\s/?#|,;]+/i;
+function liNormalize(v){
+  const m = String(v||"").trim().match(LI_RE); if (!m) return null;
+  const path = m[0].replace(/^(?:https?:\/\/)?(?:[a-z]{2,3}\.)?linkedin\.com/i, "").replace(/\/+$/,"");
+  return { href: "https://www.linkedin.com" + path, text: "linkedin.com" + path };
+}
+function liSettings(){
+  const inp = $("#li"), on = $("#li-on");
+  return { url: inp ? inp.value.trim() : (store(true,"rms.li")||""), on: on ? on.checked : store(true,"rms.lion")!=="0" };
+}
+function initLinkedIn(){
+  const inp = $("#li"), on = $("#li-on"); if (!inp) return;
+  let saved = store(true,"rms.li");
+  if (!saved) { const m = (CTX.resume||"").match(LI_RE) || (TAILORED && (TAILORED.contact||[]).join(" ").match(LI_RE)); if (m) saved = liNormalize(m[0]).href; }
+  inp.value = saved || ""; on.checked = store(true,"rms.lion")!=="0";
+  const upd = () => { store(false,"rms.li",inp.value.trim()); store(false,"rms.lion",on.checked?"1":"0"); inp.style.borderColor = inp.value.trim() && !liNormalize(inp.value) ? "var(--bad)" : ""; if (TAILORED) showTailored(); };
+  inp.addEventListener("change", upd); inp.addEventListener("input", ()=>{ inp.style.borderColor=""; }); on.addEventListener("change", upd);
+}
+/* Contact items: [{text, href?}]. Email becomes a mailto link; LinkedIn uses the URL from the field when switched on. */
+function contactItems(T){
+  const s = liSettings(), li = s.on ? liNormalize(s.url) : null;
+  const out = []; let liPlaced = false;
+  (T.contact||[]).filter(Boolean).map(String).forEach(t=>{
+    const tt = t.trim();
+    if (LI_RE.test(tt)) { if (li) { if (!liPlaced) { out.push(li); liPlaced = true; } } else if (!s.on) out.push({text: tt}); else { const n = liNormalize(tt); out.push(n || {text: tt}); } return; }
+    if (/^[\w.+-]+@[\w-]+\.[\w.-]+$/.test(tt)) { out.push({text: tt, href: "mailto:" + tt}); return; }
+    out.push({text: tt});
+  });
+  if (li && !liPlaced) out.push(li);
+  if (!s.on) out.forEach(x=>{ if (x.href && x.href.includes("linkedin.com")) delete x.href; });
+  return out;
+}
 function showTailored(){
   const T = TAILORED;
   $("#dl-docx").disabled=false; $("#dl-pdf").disabled=false;
@@ -944,7 +982,7 @@ function showTailored(){
     <div class="hdr">
       <div class="nm">${esc(T.name)}</div>
       ${T.headline?`<div class="hl">${esc(T.headline)}</div>`:""}
-      <div class="ct">${esc((T.contact||[]).filter(Boolean).join("  |  "))}</div>
+      <div class="ct">${contactItems(T).map(c=>c.href?`<a href="${esc(c.href)}" target="_blank" rel="noopener" style="color:#0563C1">${esc(c.text)}</a>`:esc(c.text)).join("  |  ")}</div>
     </div>
     ${sec("Professional Summary", T.summary?`<div>${esc(T.summary)}</div>`:"")}
     ${sec("Core Skills", (T.skills||[]).map(s=>`<div class="sk"><strong>${esc(s.group)}:</strong> ${esc((s.items||[]).join(", "))}</div>`).join(""))}
@@ -970,7 +1008,7 @@ const NAVY_HEX = "1F3A5F", GRAY_HEX = "55595F";
 function xe(s){ return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,""); }
 function run(t,o={}){
   // child order follows the OOXML schema: b, i, caps, color, spacing, sz
-  const rpr = `${o.b?"<w:b/><w:bCs/>":""}${o.i?"<w:i/><w:iCs/>":""}${o.caps?"<w:caps/>":""}${o.color?`<w:color w:val="${o.color}"/>`:""}${o.spc?`<w:spacing w:val="${o.spc}"/>`:""}${o.sz?`<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>`:""}`;
+  const rpr = `${o.b?"<w:b/><w:bCs/>":""}${o.i?"<w:i/><w:iCs/>":""}${o.caps?"<w:caps/>":""}${o.color?`<w:color w:val="${o.color}"/>`:""}${o.spc?`<w:spacing w:val="${o.spc}"/>`:""}${o.sz?`<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>`:""}${o.u?`<w:u w:val="single"/>`:""}`;
   return `<w:r>${rpr?`<w:rPr>${rpr}</w:rPr>`:""}${o.tab?"<w:tab/>":""}${t!==""?`<w:t xml:space="preserve">${xe(t)}</w:t>`:""}</w:r>`;
 }
 function para(runs,o={}){
@@ -978,7 +1016,7 @@ function para(runs,o={}){
   const ppr = `${o.keep?"<w:keepNext/>":""}<w:keepLines/>${o.border?`<w:pBdr><w:bottom w:val="single" w:sz="8" w:space="2" w:color="${NAVY_HEX}"/></w:pBdr>`:""}${o.tabR?`<w:tabs><w:tab w:val="right" w:pos="${o.tabR}"/></w:tabs>`:""}<w:spacing w:before="${o.before||0}" w:after="${o.after??0}"/>${o.ind?`<w:ind w:left="${o.ind}" w:hanging="${o.hang||0}"/>`:""}${o.jc?`<w:jc w:val="${o.jc}"/>`:""}`;
   return `<w:p><w:pPr>${ppr}</w:pPr>${runs.join("")}</w:p>`;
 }
-function buildDocxXml(T){
+function buildDocxXml(T, rels = []){
   const MAR = 1000, TEXTW = 11906 - 2*MAR, P = [];
   const head = h => P.push(para([run(h,{b:true,caps:true,color:NAVY_HEX,spc:16,sz:22})],{border:true,before:260,after:110,keep:true}));
   const bullet = t => P.push(para([run("•"),run(t,{tab:true})],{ind:300,hang:300,after:40}));
@@ -988,7 +1026,13 @@ function buildDocxXml(T){
   };
   P.push(para([run(T.name,{b:true,color:NAVY_HEX,sz:40})],{jc:"center",after:20}));
   if (T.headline) P.push(para([run(T.headline,{sz:22})],{jc:"center",after:20}));
-  P.push(para([run((T.contact||[]).filter(Boolean).join("  |  "),{color:GRAY_HEX,sz:19})],{jc:"center",after:40}));
+  const cRuns = [];
+  contactItems(T).forEach((c,i)=>{
+    if (i) cRuns.push(run("  |  ",{color:GRAY_HEX,sz:19}));
+    if (c.href) { const id = "rIdL" + (rels.length+1); rels.push({id, href:c.href}); cRuns.push(`<w:hyperlink r:id="${id}" w:history="1">${run(c.text,{color:"0563C1",sz:19,u:true})}</w:hyperlink>`); }
+    else cRuns.push(run(c.text,{color:GRAY_HEX,sz:19}));
+  });
+  P.push(para(cRuns,{jc:"center",after:40}));
   if (T.summary){ head("Professional Summary"); P.push(para([run(T.summary)],{after:0})); }
   if ((T.skills||[]).length){ head("Core Skills"); T.skills.forEach(s=>P.push(para([run(s.group+": ",{b:true}),run((s.items||[]).join(", "))],{after:40}))); }
   if ((T.experience||[]).length){ head("Professional Experience");
@@ -998,7 +1042,7 @@ function buildDocxXml(T){
   if ((T.certifications||[]).length){ head("Certifications"); T.certifications.forEach(bullet); }
   (T.extras||[]).filter(x=>(x.items||[]).length).forEach(x=>{ head(x.heading||"Additional"); x.items.forEach(bullet); });
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${P.join("")}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="900" w:right="${MAR}" w:bottom="900" w:left="${MAR}" w:header="500" w:footer="500" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${P.join("")}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="900" w:right="${MAR}" w:bottom="900" w:left="${MAR}" w:header="500" w:footer="500" w:gutter="0"/></w:sectPr></w:body></w:document>`;
 }
 async function buildDocx(T){
   await need("jszip");
@@ -1007,9 +1051,10 @@ async function buildDocx(T){
   z.file("[Content_Types].xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`);
   z.file("_rels/.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`);
   z.file("docProps/core.xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${xe(T.name)} Resume</dc:title><dc:creator>${xe(T.name)}</dc:creator></cp:coreProperties>`);
-  z.file("word/_rels/document.xml.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
+  const rels = [], docXml = buildDocxXml(T, rels);
+  z.file("word/_rels/document.xml.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${rels.map(r=>`<Relationship Id="${r.id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${xe(r.href)}" TargetMode="External"/>`).join("")}</Relationships>`);
   z.file("word/styles.xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="21"/><w:szCs w:val="21"/><w:lang w:val="en-GB"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>`);
-  z.file("word/document.xml", buildDocxXml(T));
+  z.file("word/document.xml", docXml);
   return z.generateAsync({type:"blob", mimeType:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
 }
 
@@ -1053,7 +1098,27 @@ async function buildPdf(T){
   };
   block(T.name, 21, "bold", NAVY, true); y += 1;
   if (T.headline) block(T.headline, 11, "normal", INK, true);
-  block((T.contact||[]).filter(Boolean).join("  |  "), 9.5, "normal", GRAY, true);
+  { // contact line(s): centred, wrapped between items, links clickable
+    const items = contactItems(T).map(c=>({...c, text: ps(c.text)})), sep = "  |  ", SZ = 9.5;
+    set("normal", SZ); const sw = doc.getTextWidth(sep);
+    const lines = [[]]; let w = 0;
+    items.forEach(c=>{ const cw = doc.getTextWidth(c.text); const add = (lines[lines.length-1].length ? sw : 0) + cw;
+      if (w + add > TW && lines[lines.length-1].length) { lines.push([]); w = 0; }
+      w += (lines[lines.length-1].length ? sw : 0) + cw; lines[lines.length-1].push(c); });
+    lines.forEach(line=>{
+      need(SZ*LH);
+      const total = line.reduce((s,c,i)=>s + doc.getTextWidth(c.text) + (i?sw:0), 0);
+      let x = (W - total)/2; const yb = base(SZ);
+      line.forEach((c,i)=>{
+        if (i) { set("normal",SZ,GRAY); doc.text(sep, x, yb); x += sw; }
+        const cw = doc.getTextWidth(c.text);
+        if (c.href) { set("normal",SZ,[5,99,193]); doc.textWithLink(c.text, x, yb, {url: c.href}); doc.setDrawColor(5,99,193); doc.setLineWidth(0.5); doc.line(x, yb+1.5, x+cw, yb+1.5); }
+        else { set("normal",SZ,GRAY); doc.text(c.text, x, yb); }
+        x += cw;
+      });
+      y += SZ*LH;
+    });
+  }
   if (T.summary){ head("Professional Summary"); block(T.summary, 10); }
   if ((T.skills||[]).length){ head("Core Skills");
     T.skills.forEach(s=>{ set("bold",10); const g = ps(s.group)+": "; const gw = doc.getTextWidth(g);
