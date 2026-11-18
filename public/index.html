@@ -250,7 +250,92 @@ th.hits,td.hits{font-variant-numeric:tabular-nums;text-align:right}
 @media (max-width:420px){ .logo>span:last-child{display:none}  .scores{grid-template-columns:1fr} .card{padding:16px} }
 @media (prefers-reduced-motion: no-preference){
   .view{animation:rise .35s ease both}
-  @keyframes rise{from{opacity:.0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @keyframes rise{from{opacity:0}to{opacity:1}}
+}
+
+/* ===== Refresh: calmer palette, frosted surfaces, app-style navigation, motion ===== */
+:root{
+  --bg:#F6F6FA; --surface:rgba(255,255,255,.82); --surface-solid:#FFFFFF; --ink:#1B1938; --muted:#6A6788; --line:#E6E5F0;
+  --accent:#5B47F5; --accent-soft:#EEECFF; --band:#1D1A4A;
+  --radius:20px; --ease:cubic-bezier(.22,.8,.24,1);
+  --shadow:0 1px 1px rgba(27,25,56,.04), 0 6px 18px -8px rgba(27,25,56,.14), 0 18px 40px -24px rgba(91,71,245,.18);
+  --glow:0 10px 30px -10px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0F0E1C; --surface:rgba(30,28,56,.72); --surface-solid:#1B1934; --ink:#E7E5F7; --muted:#9D9AC0; --line:#2C2A4E;
+  --accent:#8F82FF; --accent-soft:#25214F; --band:#1F1B4D;
+  --shadow:0 1px 1px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.65);
+}}
+:root[data-theme="dark"]{
+  --bg:#0F0E1C; --surface:rgba(30,28,56,.72); --surface-solid:#1B1934; --ink:#E7E5F7; --muted:#9D9AC0; --line:#2C2A4E;
+  --accent:#8F82FF; --accent-soft:#25214F; --band:#1F1B4D;
+  --shadow:0 1px 1px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.65);
+}
+html{scroll-behavior:smooth}
+body{line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+body::before{content:"";position:fixed;inset:-20vmax;z-index:-1;pointer-events:none;
+  background:radial-gradient(40vmax 40vmax at 12% 8%, color-mix(in srgb,var(--accent) 16%,transparent), transparent 60%),
+             radial-gradient(36vmax 36vmax at 92% 18%, color-mix(in srgb,var(--hl) 22%,transparent), transparent 62%),
+             radial-gradient(44vmax 44vmax at 70% 100%, color-mix(in srgb,var(--accent) 10%,transparent), transparent 60%)}
+h2{font-family:var(--body);font-weight:700;font-size:17.5px;letter-spacing:-0.01em}
+.appbar{position:sticky;top:0;z-index:30;margin:0 -18px;padding:12px 18px;background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.logo .glyph{background:linear-gradient(135deg,#2A2470,var(--accent));box-shadow:var(--glow)}
+.iconbtn{width:40px;height:40px;padding:0;justify-content:center;border-radius:12px}
+.card,.panel,.score,.scan-card{background:var(--surface);backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);border:1px solid color-mix(in srgb,var(--line) 80%,transparent);box-shadow:var(--shadow)}
+.card,.panel{border-radius:var(--radius)}
+.btn{border-radius:12px;transition:transform .15s var(--ease),box-shadow .2s var(--ease),border-color .2s,background .2s,filter .2s}
+.btn.solid{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 70%,#B04CF0));border:0;box-shadow:var(--glow)}
+.btn.solid:hover{transform:translateY(-1px);filter:brightness(1.06)}
+.btn:active{transform:scale(.97)}
+textarea,input[type=url],input[type=text],input[type=password]{background:var(--surface-solid);border-radius:12px}
+textarea:focus,input:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
+.drop{background:color-mix(in srgb,var(--surface-solid) 60%,transparent);border-radius:16px}
+.drop svg{transition:transform .3s var(--ease)}
+.drop:hover svg{transform:translateY(-3px) scale(1.06)}
+.hero{background:radial-gradient(120% 140% at 0% 0%, #2A2470 0%, #221D5C 40%, transparent 70%), linear-gradient(135deg,#1D1A4A 0%,#3A2FA0 65%,#6A4FF0 100%);border-radius:26px;box-shadow:0 30px 60px -30px rgba(58,47,160,.6)}
+.hero::after{background:radial-gradient(circle,color-mix(in srgb,var(--hl) 35%,transparent),transparent 70%);opacity:.6}
+.score{border-radius:18px}
+.score:hover{transform:translateY(-3px);box-shadow:var(--shadow),var(--glow)}
+.meter{height:8px;background:color-mix(in srgb,var(--line) 70%,transparent)}
+.meter i{width:0;transition:width 1s var(--ease)}
+/* tabs: segmented control with a sliding indicator */
+.tabs{position:sticky;top:66px;z-index:20;border:1px solid color-mix(in srgb,var(--line) 80%,transparent);border-radius:16px;padding:5px;gap:2px;background:var(--surface);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:var(--shadow);width:max-content;max-width:100%;margin:22px 0 16px}
+.tabs button{position:relative;z-index:1;border:0;border-radius:11px;margin:0;padding:9px 14px;transition:color .2s}
+.tabs button.on{color:#fff;border:0}
+.tabs button svg{flex:none}
+.tabs .ind{position:absolute;z-index:0;top:5px;bottom:5px;left:0;width:0;border-radius:11px;background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 70%,#B04CF0));box-shadow:var(--glow);transition:transform .35s var(--ease),width .35s var(--ease)}
+.tabs .count{background:var(--bad);color:#fff}
+.tabs button.on .count{background:#fff;color:var(--accent)}
+.fix{background:color-mix(in srgb,var(--surface-solid) 70%,transparent);border:1px solid color-mix(in srgb,var(--line) 70%,transparent);transition:transform .2s var(--ease)}
+.fix:hover{transform:translateX(3px)}
+.cf{background:var(--surface-solid)}
+.resume-view,.paper{border-radius:14px}
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;z-index:80;background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;font-weight:600;font-size:14px;box-shadow:0 12px 30px -10px rgba(0,0,0,.4);pointer-events:none;transition:opacity .25s,transform .35s var(--ease)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+/* motion */
+@media (prefers-reduced-motion: no-preference){
+  .reveal{opacity:0;transform:translateY(12px);animation:revealIn .55s var(--ease) forwards;animation-delay:calc(var(--i,0) * 70ms)}
+  @keyframes revealIn{to{opacity:1;transform:none}}
+  .pane:not(.hidden){animation:paneIn .35s var(--ease)}
+  @keyframes paneIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .scan-card{animation:pop .35s var(--ease)}
+  @keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+  .btn.solid.big{background-size:200% 200%;animation:sheen 6s ease-in-out infinite}
+  @keyframes sheen{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+}
+/* phones: tabs become an app-style bottom bar */
+@media (max-width:760px){
+  .appbar{margin:0 calc(-1 * max(18px, env(safe-area-inset-left)))}
+  .tabs{position:fixed;top:auto;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));width:auto;margin:0;justify-content:space-between;border-radius:22px;padding:6px;z-index:40}
+  .tabs button{flex:1;flex-direction:column;gap:3px;font-size:10.5px;letter-spacing:-0.01em;padding:7px 1px;border-radius:16px;min-width:0}
+  .tabs button .lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .tabs .count{position:absolute;top:2px;right:calc(50% - 22px);font-size:10px;padding:0 5px}
+  .tabs .ind{border-radius:16px;top:6px;bottom:6px}
+  #results{padding-bottom:84px}
+  .toast{bottom:calc(96px + env(safe-area-inset-bottom))}
+  .hero{border-radius:22px}
+  h1{font-size:28px}
 }
 </style>
 </head>
@@ -261,7 +346,8 @@ th.hits,td.hits{font-variant-numeric:tabular-nums;text-align:right}
       <span class="glyph"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="3" y="2" width="12" height="14" rx="2" fill="#fff"/><rect x="5" y="5" width="8" height="2" rx="1" fill="#FFE14D"/><rect x="5" y="9" width="6" height="1.5" rx=".75" fill="#C9C5E4"/><rect x="5" y="12" width="7" height="1.5" rx=".75" fill="#FFE14D"/></svg></span>
       <span>Resume <span class="mark">Match</span></span>
     </button>
-    <div class="row" style="display:flex;gap:8px">
+    <div class="row" style="display:flex;gap:8px;align-items:center">
+      <button class="btn iconbtn" id="theme" aria-label="Switch light or dark mode" title="Light / dark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
       <button class="btn hidden" id="to-results">Back to results</button>
       <button class="btn" id="new">New analysis</button>
     </div>
@@ -325,6 +411,7 @@ th.hits,td.hits{font-variant-numeric:tabular-nums;text-align:right}
   <section id="results" class="view hidden" aria-live="polite"></section>
 </div>
 
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="scan hidden" id="lock" style="z-index:60" role="dialog" aria-modal="true" aria-labelledby="lock-t">
   <form class="scan-card" id="lock-form" style="grid-template-columns:1fr;gap:14px">
     <h2 id="lock-t">Unlock Resume Match</h2>
@@ -601,7 +688,7 @@ async function askClaude(prompt, kind, _retry){
 const icon = s => `<span class="ic ${s}" aria-label="${s}">${s==="pass"?"✓":s==="warn"?"!":"×"}</span>`;
 const checkList = cs => `<ul class="list">${cs.map(c=>`<li class="ck">${icon(c.status)}<div><div><strong>${esc(c.label)}</strong></div><div class="d">${esc(c.detail)}</div></div></li>`).join("")}</ul>`;
 const verdictClass = l => /strong|good/i.test(l||"")?"v-good":/stretch/i.test(l||"")?"v-warn":"v-bad";
-const meter = s => `<div class="meter"><i style="width:${s}%;background:${bandColor(s)}"></i></div>`;
+const meter = s => `<div class="meter"><i data-w="${s}" style="background:${bandColor(s)}${reduceMotion()?`;width:${s}%`:""}"></i></div>`;
 const reduceMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 let kwFilter = "all", activeTab = "overview";
 
@@ -675,9 +762,9 @@ function render(R, meta){
       </div>
     </div>
   </div>
-  <div class="scores">${scores.map(([go,n,s,sub])=>`<button class="score" data-go="${go}"><div class="top"><span class="name">${n}</span><span class="n">${s}<small>/100</small></span></div>${meter(s)}<span class="sub">${esc(sub)}</span></button>`).join("")}</div>
+  <div class="scores">${scores.map(([go,n,s,sub])=>`<button class="score" data-go="${go}"><div class="top"><span class="name">${n}</span><span class="n" data-v="${s}">${s}<small>/100</small></span></div>${meter(s)}<span class="sub">${esc(sub)}</span></button>`).join("")}</div>
 
-  <nav class="tabs" role="tablist">${tabs.map(([id,l,c])=>`<button role="tab" id="tab-${id}" data-tab="${id}" aria-controls="pane-${id}">${l}${c?`<span class="count">${c}</span>`:""}</button>`).join("")}</nav>
+  <nav class="tabs" role="tablist"><span class="ind" aria-hidden="true"></span>${tabs.map(([id,l,c])=>`<button role="tab" id="tab-${id}" data-tab="${id}" aria-controls="pane-${id}">${TAB_ICONS[id]||""}<span class="lbl">${TAB_SHORT[id]&&innerWidth<=760?TAB_SHORT[id]:l}</span>${c?`<span class="count">${c}</span>`:""}</button>`).join("")}</nav>
 
   <div id="pane-overview" role="tabpanel" class="pane">
     <div class="grid2">
@@ -792,12 +879,48 @@ function render(R, meta){
   showView("results");
   showTab(activeTab);
   animateGauge(R.overall);
+  animateIn();
 }
+const _ic = d => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const TAB_ICONS = {
+  overview: _ic('<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'),
+  keywords: _ic('<path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/>'),
+  ats: _ic('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>'),
+  improve: _ic('<path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2z"/><path d="M5 3v4M3 5h4M19 17v4M17 19h4"/>'),
+  prep: _ic('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>')
+};
+const TAB_SHORT = {overview:"Overview", keywords:"Keywords", ats:"ATS", improve:"Improve", prep:"Interview"};
+function moveIndicator(){
+  const nav = $("#results .tabs"), on = nav && nav.querySelector("button.on"), ind = nav && nav.querySelector(".ind");
+  if (!on || !ind) return;
+  ind.style.width = on.offsetWidth + "px"; ind.style.transform = `translateX(${on.offsetLeft}px)`;
+}
+window.addEventListener("resize", moveIndicator);
+function toast(msg){
+  const t = $("#toast"); if (!t) return;
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove("show"), 1800);
+}
+function animateIn(){
+  const els = document.querySelectorAll("#results .banner, #results .hero, #results .score");
+  els.forEach((el,i)=>{ el.classList.remove("reveal"); void el.offsetWidth; el.style.setProperty("--i", i); el.classList.add("reveal"); });
+  requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelectorAll("#results .meter i[data-w]").forEach(m=>{ m.style.width = m.dataset.w + "%"; })));
+  if (!reduceMotion()) document.querySelectorAll("#results .score .n").forEach(n=>{
+    const target = +n.dataset.v, t0 = performance.now();
+    const tick = t => { const p = Math.min(1,(t-t0)/900), e = 1-Math.pow(1-p,3); n.firstChild.nodeValue = Math.round(target*e); if (p<1) requestAnimationFrame(tick); };
+    n.firstChild.nodeValue = 0; requestAnimationFrame(tick);
+  });
+}
+let _tabTapped = false;
 function showTab(id, scroll){
   activeTab = id;
   document.querySelectorAll("#results .pane").forEach(p=>p.classList.toggle("hidden", p.id!=="pane-"+id));
   document.querySelectorAll("#results [data-tab]").forEach(b=>{ const on = b.dataset.tab===id; b.classList.toggle("on",on); b.setAttribute("aria-selected", on); });
-  if (scroll) { const t = $("#results .tabs"); if (t) t.scrollIntoView({behavior: reduceMotion()?"auto":"smooth", block:"start"}); }
+  requestAnimationFrame(moveIndicator);
+  requestAnimationFrame(()=>document.querySelectorAll("#pane-"+id+" .meter i[data-w]").forEach(m=>{ m.style.width = m.dataset.w + "%"; }));
+  if (scroll) { const pane = $("#pane-"+id); if (pane) { const y = pane.getBoundingClientRect().top + scrollY - (innerWidth<=760 ? 80 : 140); window.scrollTo({top:y, behavior: reduceMotion()?"auto":"smooth"}); } }
+  else if (innerWidth<=760 && _tabTapped) { const pane = $("#pane-"+id); if (pane) window.scrollTo({top: pane.getBoundingClientRect().top + scrollY - 76, behavior: reduceMotion()?"auto":"smooth"}); }
+  _tabTapped = false;
 }
 function renderKw(R){
   const order = r => (r.found?2:0) + (r.importance==="must"?0:1);
@@ -1153,7 +1276,7 @@ async function download(kind, btn){
       const url = URL.createObjectURL(file), a = document.createElement("a");
       a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(()=>URL.revokeObjectURL(url), 4000);
-      btn.textContent = "Downloaded";
+      btn.textContent = "Downloaded"; toast("Resume downloaded");
     }
     setTimeout(()=>{ btn.textContent = label; }, 1600);
   } catch(e){
@@ -1162,7 +1285,7 @@ async function download(kind, btn){
   } finally { btn.disabled = false; }
 }
 async function copy(text, btn){
-  try { await navigator.clipboard.writeText(text); const o=btn.textContent; btn.textContent="Copied"; setTimeout(()=>btn.textContent=o,1400); }
+  try { await navigator.clipboard.writeText(text); toast("Copied to clipboard"); const o=btn.textContent; btn.textContent="Copied"; setTimeout(()=>btn.textContent=o,1400); }
   catch(e){ btn.textContent="Select and copy manually"; }
 }
 
@@ -1183,7 +1306,7 @@ function showView(v){
 }
 $("#results").addEventListener("click", e=>{
   const g = e.target.closest("[data-go]"); if (g) { showTab(g.dataset.go, true); return; }
-  const t = e.target.closest("[data-tab]"); if (t) showTab(t.dataset.tab);
+  const t = e.target.closest("[data-tab]"); if (t) { _tabTapped = true; showTab(t.dataset.tab); }
 });
 $("#new").addEventListener("click", ()=>showView("setup"));
 $("#home").addEventListener("click", ()=>showView("setup"));
@@ -1337,6 +1460,16 @@ const EX_AI = {
  interview_risks:["How do you measure marketing's contribution to pipeline, not just MQLs?","Walk me through an attribution model you've set up or would set up.","Your recent work is D2C. What changes when the buyer is a B2B committee?"],
  questions:[{q:"How much sales pipeline (in ₹ or $) did your Northwind LinkedIn and Google campaigns generate?",why:"The job is measured on pipeline, not MQLs."},{q:"Did you track CAC or payback period at Brightleaf? What were the numbers?",why:"CAC is a must-have keyword and a weekly metric in this role."},{q:"Have you worked with RevOps or sales on attribution or lead routing?",why:"Attribution is the biggest gap against this job."}],
  region_tips:["Keep it to two pages; Indian recruiters skim the first half page.","Mention notice period and current location near the top.","Leave out photo, date of birth and marital status."]};
+
+/* ---------- theme ---------- */
+(function(){
+  const saved = store(true,"rms.theme"); if (saved) document.documentElement.dataset.theme = saved;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const paint = () => { if (meta) meta.content = isDark() ? "#0F0E1C" : "#F6F6FA"; };
+  paint();
+  $("#theme").addEventListener("click", ()=>{ const next = isDark() ? "light" : "dark"; document.documentElement.dataset.theme = next; store(false,"rms.theme",next); paint(); toast(next==="dark" ? "Dark mode" : "Light mode"); });
+})();
 
 /* ---------- start ---------- */
 (function init(){
