@@ -5,22 +5,21 @@ Score your resume against any job description: ATS check, keyword match, job fit
 ## How it's built
 
 - `public/`: the app, a single `index.html` plus the manifest, service worker and icons. No build step.
-- `functions/api/claude.js`: a Cloudflare Pages Function that calls the Anthropic API. Your API key stays on the server and never reaches the browser.
+- `worker.js` + `functions/api/claude.js`: the Cloudflare Worker that calls the Anthropic API. Your API key stays on the server and never reaches the browser.
 
-## Deploy on Cloudflare Pages
+## Deploy on Cloudflare (Workers)
 
-1. In Cloudflare, go to **Workers & Pages → Create → Pages → Connect to Git**, then pick this repo.
-2. Use these build settings:
-   - Framework preset: **None**
-   - Build command: *(leave empty)*
-   - Build output directory: `public`
-3. Click **Save and Deploy**.
-4. Open **Settings → Variables and Secrets** and add these for **Production**:
-   - `ANTHROPIC_API_KEY`, type **Secret**: your key from console.anthropic.com
-   - `APP_PASSCODE`, type **Secret**: any passcode. The app asks for it once on each device, so nobody else can spend your API credit.
+`wrangler.jsonc` and `worker.js` make this a Worker that serves `public/` and handles `POST /api/claude`.
+
+1. Go to **Workers & Pages → Create → Import a repository** and pick this repo. Keep the deploy command `npx wrangler deploy` and leave the build command empty.
+2. In the Worker, open **Settings → Variables and Secrets** and add these with type **Secret**:
+   - `ANTHROPIC_API_KEY`: your key from console.anthropic.com
+   - `APP_PASSCODE`: any passcode. The app asks for it once on each device.
    - `ANTHROPIC_MODEL` (optional): defaults to `claude-sonnet-5-5`
-5. Open **Deployments → … → Retry deployment** so the new variables take effect.
-6. Optional custom domain: go to **Custom domains → Set up a domain** and add something like `resume.jefinsebastian.com`. Your DNS is already on Cloudflare, so it's one click.
+3. Every push to `main` redeploys automatically.
+4. Optional custom domain: go to **Settings → Domains & Routes → Add → Custom domain**, for example `resume.jefinsebastian.com`.
+
+The Worker name in `wrangler.jsonc` must match the Worker's name in Cloudflare (`resume-match`).
 
 ## Install on your phone
 
