@@ -5,6 +5,7 @@
 //   3. The page's main text
 // Requires the same APP_PASSCODE as /api/claude so the endpoint can't be used as an open proxy.
 
+import { logEvent } from "../ledger.js";
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
 
@@ -141,9 +142,10 @@ function fromPage(html) {
 }
 const looksBlocked = (t) => /sign in to|log ?in to (view|continue)|enable javascript|access denied|are you a robot|captcha|request blocked|just a moment/i.test(t.slice(0, 600)) && t.length < 2500;
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, ctx }) {
+  const done = async (body, status = 200) => { await logEvent(env, ctx, { type: "job_read", job: body.title, company: body.company, ok: status === 200, detail: status === 200 ? `${body.source} · ${url && url.hostname}` : `${body.message || body.error} · ${url && url.hostname}` }); return json(body, status); };
   if (env.APP_PASSCODE && request.headers.get("x-app-key") !== env.APP_PASSCODE) return json({ error: "passcode", message: "Passcode required." }, 401);
-  let url; try { ({ url } = await request.json()); url = new URL(String(url || "").trim()); } catch { return json({ error: "bad_url", message: "That doesn't look like a valid link." }, 400); }
+  var url; try { ({ url } = await request.json()); url = new URL(String(url || "").trim()); } catch { return json({ error: "bad_url", message: "That doesn't look like a valid link." }, 400); }
   if (!/^https?:$/.test(url.protocol) || isPrivateHost(url.hostname)) return json({ error: "bad_url", message: "Use a public job link that starts with https://." }, 400);
   try {
     let out = await trySiteApis(url).catch(() => null);
@@ -151,16 +153,16 @@ export async function onRequestPost({ request, env }) {
       const r = await get(url.toString());
       if (!r.ok && r.status !== 200) {
         const blocked = r.status === 403 || r.status === 429 || r.status === 999;
-        return json({ error: "fetch_failed", message: blocked ? "This job site blocks automatic reading. Paste the description instead." : `The job page didn't load (error ${r.status}). Check the link, or paste the description.` }, 422);
+        return done({ error: "fetch_failed", message: blocked ? "This job site blocks automatic reading. Paste the description instead." : `The job page didn't load (error ${r.status}). Check the link, or paste the description.` }, 422);
       }
       out = fromJsonLd(r.body) || fromPage(r.body);
       if (out.source === "Page text" && (out.text.length < 400 || looksBlocked(out.text)))
-        return json({ error: "no_content", message: "This page needs a sign-in or loads the job with scripts, so it can't be read automatically. Paste the description instead." }, 422);
+        return done({ error: "no_content", message: "This page needs a sign-in or loads the job with scripts, so it can't be read automatically. Paste the description instead." }, 422);
     }
-    if (out.text.length < 200) return json({ error: "no_content", message: "Couldn't find a job description on that page. Paste it instead." }, 422);
-    return json(out);
+    if (out.text.length < 200) return done({ error: "no_content", message: "Couldn't find a job description on that page. Paste it instead." }, 422);
+    return done(out);
   } catch (e) {
-    return json({ error: "fetch_failed", message: e && e.name === "AbortError" ? "The job page took too long to respond. Paste the description instead." : "Couldn't read that page. Paste the description instead." }, 422);
+    return done({ error: "fetch_failed", message: e && e.name === "AbortError" ? "The job page took too long to respond. Paste the description instead." : "Couldn't read that page. Paste the description instead." }, 422);
   }
 }
 export const onRequest = () => json({ error: "method", message: "Use POST." }, 405);

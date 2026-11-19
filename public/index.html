@@ -351,6 +351,57 @@ textarea:focus,input:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 
   .hero{border-radius:22px}
   h1{font-size:28px}
 }
+/* ===== Dashboard ===== */
+.btn .short{display:none}
+@media (max-width:480px){ .btn .long{display:none} .btn .short{display:inline} .appbar .row{gap:6px !important} }
+.dash-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:18px 0 16px}
+.dash-head p{color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{background:var(--surface);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid color-mix(in srgb,var(--line) 80%,transparent);box-shadow:var(--shadow);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:4px}
+.kpi .l{font-size:13px;font-weight:600;color:var(--muted)}
+.kpi .v{font-family:var(--display);font-weight:700;font-size:28px;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.kpi.hero-kpi{background:linear-gradient(135deg,#1D1A4A,#3A2FA0 70%,#6A4FF0);color:#F4F2FF;border:0}
+.kpi.hero-kpi .l,.kpi.hero-kpi .s{color:#C9C4F2}
+.minis{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}
+.mini{font-size:13px;background:var(--surface);border:1px solid color-mix(in srgb,var(--line) 80%,transparent);border-radius:99px;padding:5px 12px;font-variant-numeric:tabular-nums}
+.mini b{font-weight:700}
+.dgrid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-top:14px}
+.dgrid>*,.kpis>*{min-width:0}
+.chart{width:100%;height:auto;display:block}
+.chart .bar{fill:var(--accent);opacity:.85;transition:opacity .15s}
+.chart .bar:hover{opacity:1}
+.chart .bar.zero{fill:var(--line);opacity:1}
+.chart text{fill:var(--muted);font-size:10px;font-family:var(--body)}
+.chart .grid{stroke:var(--line);stroke-dasharray:2 3}
+.tip{font-size:13px;color:var(--muted);min-height:20px;margin-top:6px;font-variant-numeric:tabular-nums}
+.tbl td,.tbl th{white-space:nowrap}
+.tbl td.wrap{white-space:normal;min-width:180px}
+.tbl .r{text-align:right;font-variant-numeric:tabular-nums}
+.tbl select{font:inherit;font-size:13px;border:1.5px solid var(--line);border-radius:9px;padding:4px 6px;background:var(--surface-solid)}
+.st-Applied{color:var(--accent)} .st-Interviewing{color:var(--warn)} .st-Offer{color:var(--good)} .st-Rejected,.st-Not{color:var(--muted)}
+.log{display:flex;flex-direction:column}
+.log .row{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.log .row:last-child{border-bottom:0}
+.log .dot{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.log .dot.free{background:var(--good-soft);color:var(--good)}
+.log .dot.fail{background:var(--bad-soft);color:var(--bad)}
+.log .t{font-weight:600;font-size:14px}
+.log .m{font-size:12.5px;color:var(--muted)}
+.log .c{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;font-size:14px}
+.log .c small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+.skel{height:84px;border-radius:18px;background:linear-gradient(90deg,var(--line),color-mix(in srgb,var(--line) 40%,transparent),var(--line));background-size:200% 100%}
+@media (prefers-reduced-motion: no-preference){ .skel{animation:sk 1.2s ease-in-out infinite} @keyframes sk{to{background-position:-200% 0}} }
+.appcards{display:none}
+@media (max-width:1000px){ .kpis{grid-template-columns:repeat(2,1fr)} .dgrid{grid-template-columns:1fr} }
+@media (max-width:760px){
+  .apptable{display:none} .appcards{display:flex;flex-direction:column;gap:10px}
+  .appcard{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface-solid);display:flex;flex-direction:column;gap:6px}
+  .appcard .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+  .appcard .meta{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .kpi .v{font-size:23px}
+}
 </style>
 </head>
 <body>
@@ -362,9 +413,10 @@ textarea:focus,input:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 
     </button>
     <div class="row" style="display:flex;gap:8px;align-items:center">
       <button class="btn hidden" id="installbtn">Install app</button>
+      <button class="btn iconbtn" id="dashbtn" aria-label="Open dashboard" title="Dashboard"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx="1"/><rect x="12" y="8" width="3" height="10" rx="1"/><rect x="17" y="5" width="3" height="13" rx="1"/></svg></button>
       <button class="btn iconbtn" id="theme" aria-label="Switch light or dark mode" title="Light / dark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
-      <button class="btn hidden" id="to-results">Back to results</button>
-      <button class="btn" id="new">New analysis</button>
+      <button class="btn hidden" id="to-results"><span class="long">Back to results</span><span class="short">Results</span></button>
+      <button class="btn" id="new"><span class="long">New analysis</span><span class="short">New</span></button>
     </div>
   </header>
 
@@ -427,6 +479,15 @@ textarea:focus,input:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 
       <span class="hint">Takes about a minute.</span>
     </div>
     <div id="err" class="msg err hidden" role="alert" style="margin-top:14px"></div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dash" class="view hidden" aria-label="Activity and cost dashboard">
+    <div class="dash-head">
+      <div><h1>Activity &amp; costs</h1><p>Every action across all your devices, with what it cost.</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="dash-refresh">Refresh</button><button class="btn" id="dash-csv">Export CSV</button></div>
+    </div>
+    <div id="dash-body"></div>
   </section>
 
   <!-- RESULTS -->
@@ -685,12 +746,16 @@ function askPasscode(wrong){
     $("#lock-cancel").onclick = () => done(null);
   });
 }
+let lastCost = null;
+function deviceName(){ const u = navigator.userAgent; return /iPhone/.test(u) ? "iPhone" : /iPad/.test(u) ? "iPad" : /Android/.test(u) ? "Android" : /Mac/.test(u) ? "Mac" : /Windows/.test(u) ? "Windows" : "Browser"; }
+const inr = v => "₹" + (v >= 100 ? Math.round(v).toLocaleString("en-IN") : (+v).toFixed(2));
+function track(body){ try { fetch("/api/ledger", {method:"POST", headers:{"content-type":"application/json","x-app-key":getPasscode()}, body: JSON.stringify(Object.assign({device: deviceName()}, body))}).catch(()=>{}); } catch(e){} }
 async function askClaude(prompt, kind, _retry){
   if (!navigator.onLine) throw new Error("You're offline. Connect to the internet and try again.");
   let r;
   try {
     const ac = new AbortController(), timer = setTimeout(()=>ac.abort(), 150000);
-    r = await fetch("/api/claude", {method:"POST", signal: ac.signal, headers:{"content-type":"application/json","x-app-key":getPasscode()}, body: JSON.stringify({prompt, kind})});
+    r = await fetch("/api/claude", {method:"POST", signal: ac.signal, headers:{"content-type":"application/json","x-app-key":getPasscode()}, body: JSON.stringify({prompt, kind, meta: Object.assign({device: deviceName()}, askClaude.meta || {})})});
     clearTimeout(timer);
   } catch(e){ throw new Error(e && e.name==="AbortError" ? "This is taking too long. Try again in a moment." : "Couldn't reach the server. Check your connection and try again."); }
   if (r.status === 401) {
@@ -702,6 +767,7 @@ async function askClaude(prompt, kind, _retry){
   let d = {}; try { d = await r.json(); } catch(e){}
   if (r.status === 429) throw new Error("Too many requests right now. Wait a minute and try again.");
   if (!r.ok) throw new Error(d.message || "The analysis failed. Try again.");
+  lastCost = {usd: d.cost_usd, inr: d.cost_inr};
   try { return parseJSON(d.text); }
   catch(e){ throw new Error(d.stop_reason==="max_tokens" ? "The answer was cut off. Try again." : "The analysis came back incomplete. Try again."); }
 }
@@ -1073,7 +1139,11 @@ async function buildTailored(){
   terr.classList.add("hidden");
   btn.disabled=true; btn.textContent="Writing your resume… (about a minute)";
   try {
+    askClaude.meta = {job: (CTX.R.ai.job||{}).title, company: (CTX.R.ai.job||{}).company, link: CTX.link};
+    lastCost = null;
     const T = await askClaude(tailorPrompt(), "tailor");
+    askClaude.meta = null;
+    if (lastCost && lastCost.inr != null) toast(`Resume written · cost ${inr(lastCost.inr)}`);
     if (!T || !T.name || !Array.isArray(T.experience)) throw new Error("The resume came back incomplete. Try again.");
     TAILORED = T;
     if (!CTX.example) { try { const last = JSON.parse(store(true,"rms.last")||"null"); if (last){ last.tailored=T; last.answers=CTX.answers; store(false,"rms.last",JSON.stringify(last)); } } catch(e){} }
@@ -1281,6 +1351,7 @@ async function buildPdf(T){
 }
 
 async function download(kind, btn){
+  const _job = (CTX && CTX.R && CTX.R.ai.job) || {};
   const terr=$("#terr"); terr.classList.add("hidden");
   if (!TAILORED) return;
   const label = btn.textContent;
@@ -1300,6 +1371,7 @@ async function download(kind, btn){
       setTimeout(()=>URL.revokeObjectURL(url), 4000);
       btn.textContent = "Downloaded"; toast("Resume downloaded");
     }
+    track({action:"event", type: "download_" + kind, job: _job.title, company: _job.company, link: CTX.link});
     setTimeout(()=>{ btn.textContent = label; }, 1600);
   } catch(e){
     btn.textContent = label;
@@ -1320,8 +1392,10 @@ let hasResults = false;
 function showView(v){
   $("#setup").classList.toggle("hidden", v!=="setup");
   $("#results").classList.toggle("hidden", v!=="results");
+  $("#dash").classList.toggle("hidden", v!=="dash");
+  $("#dashbtn").classList.toggle("on-view", v==="dash");
   if (v==="results") hasResults = true;
-  $("#to-results").classList.toggle("hidden", !(v==="setup" && hasResults));
+  $("#to-results").classList.toggle("hidden", !((v==="setup" || v==="dash") && hasResults));
   $("#new").classList.toggle("hidden", v==="setup");
   window.scrollTo({top:0, behavior: reduceMotion()?"auto":"smooth"});
   refreshSteps();
@@ -1459,7 +1533,8 @@ async function runScore(force){
     const rk = resKey(resume, jd, region);
     let ai = null, cached = false;
     if (!force) { try { ai = JSON.parse(store(true, rk)||"null"); cached = !!ai; } catch(e){} }
-    if (!ai) { ai = await askClaude(buildPrompt(resume, jd, region, link, fixedKw), "score"); cacheResult(rk, ai); }
+    lastCost = null;
+    if (!ai) { askClaude.meta = {link}; ai = await askClaude(buildPrompt(resume, jd, region, link, fixedKw), "score"); askClaude.meta = null; cacheResult(rk, ai); }
     if (fixedKw && fixedKw.length) {
       const byTerm = {}; (ai.keywords||[]).forEach(k=>{ byTerm[String(k.term).toLowerCase()] = k; });
       ai.keywords = fixedKw.map(k=>({...k, likely_have: (byTerm[String(k.term).toLowerCase()]||{}).likely_have || k.likely_have}));
@@ -1473,6 +1548,10 @@ async function runScore(force){
     await new Promise(r=>setTimeout(r,300));
     $("#scan").classList.add("hidden");
     render(R, {link, region, cached});
+    const jt = (ai.job||{}).title, jc = (ai.job||{}).company;
+    if (cached) track({action:"event", type:"score_saved", job: jt, company: jc, link});
+    track({action:"app", job: jt, company: jc, link, fit: R.overall, kw: R.kw.score});
+    if (!cached && lastCost && lastCost.inr != null) setTimeout(()=>toast(`Scored · cost ${inr(lastCost.inr)}`), 900);
   } catch(e){ $("#scan").classList.add("hidden"); showViewSafe(); showErr(e.message); }
   finally { btn.disabled=false; }
 }
@@ -1567,6 +1646,109 @@ const EX_AI = {
   $("#installbtn").addEventListener("click", async ()=>{ if (!deferred) return; deferred.prompt(); const c = await deferred.userChoice; deferred = null; $("#installbtn").classList.add("hidden"); if (c && c.outcome==="accepted") toast("Installed"); });
   window.addEventListener("appinstalled", ()=>$("#installbtn").classList.add("hidden"));
 })();
+
+/* ---------- dashboard ---------- */
+const EV = {
+  score: ["Job scored", "AI"], tailor: ["Resume written", "AI"], job_read: ["Job link read", "free"], score_saved: ["Saved score reused", "free"],
+  download_docx: ["Word downloaded", "free"], download_pdf: ["PDF downloaded", "free"], ai: ["AI request", "AI"]
+};
+const EV_ICON = { AI: "✦", free: "✓" };
+let DASH = null;
+async function apiGet(path, _retry){
+  let r; try { r = await fetch(path, {headers:{"x-app-key":getPasscode()}}); } catch(e){ throw new Error("Couldn't reach the server. Check your connection."); }
+  if (r.status === 401) { if (_retry===2) throw new Error("Wrong passcode."); const p = await askPasscode(!!getPasscode()); if (!p) throw new Error("A passcode is needed to see your dashboard."); return apiGet(path,(_retry||0)+1); }
+  if (path.includes("format=csv")) { if (!r.ok) throw new Error("Export failed."); return r.text(); }
+  let d = {}; try { d = await r.json(); } catch(e){}
+  if (!r.ok) throw new Error(d.message || "Couldn't load the dashboard.");
+  return d;
+}
+async function openDash(){
+  showView("dash");
+  $("#dash-body").innerHTML = `<div class="kpis">${'<div class="skel"></div>'.repeat(4)}</div><div class="dgrid"><div class="skel" style="height:220px"></div><div class="skel" style="height:220px"></div></div>`;
+  try { DASH = await apiGet("/api/ledger?tz=" + (-new Date().getTimezoneOffset())); renderDash(); }
+  catch(e){ $("#dash-body").innerHTML = `<div class="panel empty">${esc(e.message)}</div>`; }
+}
+const fmtTime = ts => { const d = new Date(ts), now = new Date(); const same = d.toDateString()===now.toDateString();
+  return same ? d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) : d.toLocaleDateString([], {day:"numeric", month:"short"}) + ", " + d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}); };
+const fmtTok = n => n >= 1e6 ? (n/1e6).toFixed(2)+"M" : n >= 1e3 ? (n/1e3).toFixed(1)+"k" : String(n|0);
+function renderDash(){
+  const D = DASH, rate = D.usd_inr || 94, I = usd => inr((+usd||0) * rate);
+  const T = D.totals || {n:0, usd:0, in_tok:0, out_tok:0}, M = D.month || {usd:0};
+  const apps = D.apps || [], byType = D.byType || [], events = D.events || [];
+  const cnt = t => (byType.find(x=>x.type===t)||{}).n || 0;
+  const scoredApps = apps.length, avg = scoredApps ? T.usd / scoredApps : 0;
+  // last 30 days
+  const tz = -new Date().getTimezoneOffset(), today = Math.floor((Date.now() + tz*60000)/86400000);
+  const map = {}; (D.daily||[]).forEach(r=>{ map[r.d] = r; });
+  const days = Array.from({length:30}, (_,i)=>{ const d = today-29+i; return {d, usd: map[d] ? +map[d].usd : 0, n: map[d] ? map[d].n : 0}; });
+  const max = Math.max(...days.map(x=>x.usd), 0.0001);
+  const small = innerWidth <= 760, W = small ? 340 : 600, H = small ? 150 : 170, P = small ? 30 : 34, bw = (W - P) / 30;
+  const bars = days.map((x,i)=>{ const h = x.usd ? Math.max(3, (x.usd/max)*(H-38)) : 3; const dt = new Date((x.d*86400000) - tz*60000 + 12*3600000);
+    return `<rect class="bar ${x.usd?"":"zero"}" x="${P + i*bw + 2}" y="${H-20-h}" width="${bw-4}" height="${h}" rx="3" data-tip="${esc(dt.toLocaleDateString([], {day:"numeric", month:"short"}))}: ${x.n} action${x.n===1?"":"s"}, ${esc(I(x.usd))}"><title>${esc(dt.toDateString())}: ${esc(I(x.usd))}</title></rect>`; }).join("");
+  const lbl = [0, 10, 20, 29].map(i=>{ const dt = new Date((days[i].d*86400000) - tz*60000 + 12*3600000); return `<text x="${i===29 ? W : i===0 ? P : P + i*bw + bw/2}" y="${H-5}" text-anchor="${i===29?"end":i===0?"start":"middle"}">${dt.toLocaleDateString([], {day:"numeric", month:"short"})}</text>`; }).join("");
+  const chart = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Spend per day, last 30 days"><line class="grid" x1="${P}" x2="${W}" y1="${H-20-(H-38)}" y2="${H-20-(H-38)}"/><text x="0" y="${H-20-(H-38)+3}">${esc(I(max))}</text><line class="grid" x1="${P}" x2="${W}" y1="${H-20}" y2="${H-20}"/>${bars}${lbl}</svg>`;
+  const STATUSES = ["Scored","Applied","Interviewing","Offer","Rejected","Not applying"];
+  const sel = a => `<select data-key="${esc(a.jobkey)}" class="st-${esc((a.status||"Scored").split(" ")[0])}" aria-label="Status for ${esc(a.title||"job")}">${STATUSES.map(s=>`<option ${s===(a.status||"Scored")?"selected":""}>${s}</option>`).join("")}</select>`;
+  const jobCell = a => `<strong>${esc(a.title || "Untitled job")}</strong>${a.company?`<div class="hint">${esc(a.company)}</div>`:""}${a.link?`<a class="hint" href="${esc(a.link)}" target="_blank" rel="noopener">View job ↗</a>`:""}`;
+  const fitPill = v => v==null ? `<span class="hint">–</span>` : `<span class="pill ${v>=75?"p-good":v>=55?"p-warn":"p-bad"}">${v}</span>`;
+  $("#dash-body").innerHTML = `
+    <div class="kpis">
+      <div class="kpi hero-kpi reveal" style="--i:0"><span class="l">Total spent</span><span class="v">${I(T.usd)}</span><span class="s">$${(+T.usd).toFixed(2)} · ${T.n} actions</span></div>
+      <div class="kpi reveal" style="--i:1"><span class="l">This month</span><span class="v">${I(M.usd)}</span><span class="s">$${(+M.usd).toFixed(2)}</span></div>
+      <div class="kpi reveal" style="--i:2"><span class="l">Jobs tracked</span><span class="v">${scoredApps}</span><span class="s">${apps.filter(a=>a.status==="Applied"||a.status==="Interviewing"||a.status==="Offer").length} applied or further</span></div>
+      <div class="kpi reveal" style="--i:3"><span class="l">Average per job</span><span class="v">${I(avg)}</span><span class="s">score + resume + reads</span></div>
+    </div>
+    <div class="minis">
+      <span class="mini"><b>${cnt("score")}</b> jobs scored</span><span class="mini"><b>${cnt("tailor")}</b> resumes written</span>
+      <span class="mini"><b>${cnt("download_docx")+cnt("download_pdf")}</b> downloads</span><span class="mini"><b>${cnt("job_read")}</b> links read</span>
+      <span class="mini"><b>${cnt("score_saved")}</b> free re-uses</span><span class="mini"><b>${fmtTok((+T.in_tok)+(+T.out_tok))}</b> AI tokens</span>
+      <span class="mini">Hosting <b>₹0</b> (Cloudflare free)</span>
+    </div>
+    <div class="dgrid">
+      <div class="panel"><div class="sec-head"><h2>Spend, last 30 days</h2><span class="hint">tap a bar</span></div>${chart}<div class="tip" id="ctip">${days.some(x=>x.usd)?"":"No spend in the last 30 days yet."}</div></div>
+      <div class="panel"><div class="sec-head"><h2>Where the money goes</h2></div>
+        <div class="tablewrap"><table class="tbl"><thead><tr><th>Action</th><th class="r">Count</th><th class="r">Tokens</th><th class="r">Cost</th></tr></thead><tbody>
+        ${byType.length ? byType.map(t=>`<tr><td>${esc((EV[t.type]||[t.type])[0])}${t.failed?` <span class="pill p-bad">${t.failed} failed</span>`:""}</td><td class="r">${t.n}</td><td class="r">${(+t.in_tok + +t.out_tok)?fmtTok(+t.in_tok + +t.out_tok):"–"}</td><td class="r"><strong>${+t.usd?I(t.usd):"Free"}</strong></td></tr>`).join("") : `<tr><td colspan="4" class="empty">Nothing yet. Score a job to start tracking.</td></tr>`}
+        </tbody></table></div>
+        <p class="hint" style="margin-top:10px">AI cost uses Anthropic's reported tokens for each call at Sonnet list prices ($2 in / $10 out per million tokens), converted at ₹${rate} per $.</p>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:14px"><div class="sec-head"><h2>Applications</h2><span class="hint">Update the status as you go</span></div>
+      ${apps.length ? `<div class="tablewrap apptable"><table class="tbl"><thead><tr><th>Job</th><th class="r">Fit</th><th class="r">Keywords</th><th>Status</th><th class="r">Resumes</th><th class="r">Downloads</th><th class="r">Cost</th><th>Last activity</th></tr></thead><tbody>
+        ${apps.map(a=>`<tr><td class="wrap">${jobCell(a)}</td><td class="r">${fitPill(a.fit)}</td><td class="r">${a.kw==null?"–":a.kw}</td><td>${sel(a)}</td><td class="r">${a.builds}</td><td class="r">${a.downloads}</td><td class="r"><strong>${I(a.usd)}</strong></td><td class="hint">${fmtTime(a.last_ts)}</td></tr>`).join("")}
+        </tbody></table></div>
+        <div class="appcards">${apps.map(a=>`<div class="appcard"><div class="top"><div>${jobCell(a)}</div>${fitPill(a.fit)}</div><div class="meta">Keywords ${a.kw==null?"–":a.kw} · ${a.builds} resume${a.builds===1?"":"s"} · ${a.downloads} download${a.downloads===1?"":"s"} · <strong>${I(a.usd)}</strong> · ${fmtTime(a.last_ts)}</div>${sel(a)}</div>`).join("")}</div>`
+      : `<div class="empty">Jobs you score show up here.</div>`}
+    </div>
+    <div class="panel" style="margin-top:14px"><div class="sec-head"><h2>Activity log</h2><span class="hint">${events.length} most recent</span></div>
+      <div class="log" id="log">${events.length ? "" : `<div class="empty">No activity yet.</div>`}</div>
+      ${events.length > 40 ? `<button class="btn" id="logmore" style="margin-top:10px">Show more</button>` : ""}
+    </div>`;
+  const row = e => { const [label, kind] = EV[e.type] || [e.type, "free"]; const fail = !e.ok;
+    return `<div class="row"><span class="dot ${fail?"fail":kind==="free"?"free":""}">${fail?"!":EV_ICON[kind]||"•"}</span>
+      <div><div class="t">${esc(label)}${fail?` <span class="pill p-bad">failed</span>`:""}</div><div class="m">${esc([e.job, e.company].filter(Boolean).join(" · ") || "–")} · ${fmtTime(e.ts)}${e.device?` · ${esc(e.device)}`:""}${e.in_tok||e.out_tok?` · ${fmtTok(e.in_tok)} in / ${fmtTok(e.out_tok)} out`:""}${e.detail?` · ${esc(e.detail)}`:""}</div></div>
+      <div class="c">${+e.cost_usd ? I(e.cost_usd) : "Free"}${+e.cost_usd?`<small>$${(+e.cost_usd).toFixed(4)}</small>`:""}</div></div>`; };
+  let shown = 40; const paint = () => { $("#log").innerHTML = events.length ? events.slice(0, shown).map(row).join("") : `<div class="empty">No activity yet.</div>`; };
+  paint();
+  if ($("#logmore")) $("#logmore").onclick = e => { shown += 60; paint(); if (shown >= events.length) e.currentTarget.remove(); };
+  $("#dash-body").querySelectorAll(".chart .bar").forEach(b=>{ const f = () => { $("#ctip").textContent = b.dataset.tip; }; b.addEventListener("mouseenter", f); b.addEventListener("click", f); });
+  $("#dash-body").querySelectorAll("select[data-key]").forEach(s=>s.addEventListener("change", async ()=>{
+    s.className = "st-" + s.value.split(" ")[0];
+    try { await apiPost("/api/ledger", {action:"status", jobkey: s.dataset.key, status: s.value}); toast(`Marked as ${s.value}`); const a = apps.find(x=>x.jobkey===s.dataset.key); if (a) a.status = s.value; }
+    catch(e){ toast("Couldn't save the status"); }
+  }));
+}
+$("#dashbtn").addEventListener("click", openDash);
+$("#dash-refresh").addEventListener("click", openDash);
+$("#dash-csv").addEventListener("click", async e=>{
+  const b = e.currentTarget; b.disabled = true;
+  try {
+    const csv = await apiGet("/api/ledger?format=csv"), name = `resume-match-activity-${new Date().toISOString().slice(0,10)}.csv`;
+    const file = new File([csv], name, {type:"text/csv"});
+    if (matchMedia("(pointer: coarse)").matches && navigator.canShare && navigator.canShare({files:[file]})) { try { await navigator.share({files:[file], title:name}); } catch(err){} }
+    else { const u = URL.createObjectURL(file), a = document.createElement("a"); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u), 4000); toast("Exported"); }
+  } catch(err){ toast(err.message); } finally { b.disabled = false; }
+});
 
 /* ---------- theme ---------- */
 (function(){

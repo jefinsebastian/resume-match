@@ -2,6 +2,8 @@
 // Secrets (Worker > Settings > Variables and Secrets): ANTHROPIC_API_KEY, APP_PASSCODE; optional ANTHROPIC_MODEL.
 import { onRequestPost, onRequest } from "./functions/api/claude.js";
 import { onRequestPost as jdPost, onRequest as jdOther } from "./functions/api/jd.js";
+import { onRequest as ledgerApi } from "./functions/api/ledger.js";
+export { Ledger } from "./functions/ledger.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -9,6 +11,7 @@ export default {
     if (url.pathname === "/api/claude") {
       return request.method === "POST" ? onRequestPost({ request, env, ctx }) : onRequest();
     }
+    if (url.pathname === "/api/ledger") return ledgerApi({ request, env, ctx });
     if (url.pathname === "/api/jd") {
       return request.method === "POST" ? jdPost({ request, env, ctx }) : jdOther();
     }

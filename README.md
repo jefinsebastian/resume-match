@@ -31,6 +31,12 @@ The Worker name in `wrangler.jsonc` must match the Worker's name in Cloudflare (
 - **Android (Chrome):** open the site, then tap **⋮ → Add to Home screen → Install**.
 - **iPhone:** open the site in **Safari**, not inside another app. Tap **Share** (on newer iOS it may be under the **⋯** menu), then **Add to Home Screen**, keep **Open as Web App** on, and tap **Add**. The app shows these steps itself on iPhone.
 
+## Dashboard
+
+The chart button in the top bar opens **Activity & costs**. Every AI call is logged with the exact tokens Anthropic reports and its cost in ₹ and $. Job link reads, downloads and saved-score reuses are logged too, as free actions. Jobs are grouped into an applications table where you can set a status (Applied, Interviewing, Offer…), and you can export everything as CSV. The log lives in a SQLite Durable Object (`Ledger`), which is free on Cloudflare's Workers plan and needs no setup: `wrangler.jsonc` declares it.
+
+Optional variables: `USD_INR` (default 94) and `PRICE_IN_PER_MTOK` / `PRICE_OUT_PER_MTOK` if you switch to a model with different pricing.
+
 ## Cost
 
 Scoring the same resume against the same job again loads the saved result instantly, at no cost. Tap "Score again with AI" to force a fresh score.

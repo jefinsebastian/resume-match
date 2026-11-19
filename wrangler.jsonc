@@ -7,5 +7,11 @@
     "directory": "./public",
     "binding": "ASSETS"
   },
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  "durable_objects": {
+    "bindings": [{ "name": "LEDGER", "class_name": "Ledger" }]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Ledger"] }
+  ]
 }

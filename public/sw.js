@@ -1,5 +1,5 @@
 // Resume Match service worker: app shell works offline; AI calls always go to the network.
-const VERSION = "rm-v5";
+const VERSION = "rm-v6";
 const SHELL = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
