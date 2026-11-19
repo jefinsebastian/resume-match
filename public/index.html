@@ -103,6 +103,20 @@ textarea{resize:vertical;font-size:14px;line-height:1.5}
 details.peek summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--accent);list-style:none}
 details.peek summary::-webkit-details-marker{display:none}
 details.peek[open] summary{margin-bottom:8px}
+.linkrow{display:flex;gap:8px}
+.linkrow input{flex:1;min-width:0}
+.jdchip{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--good-soft);border:1px solid color-mix(in srgb,var(--good) 30%,transparent)}
+.jdchip.warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.jdchip .tick{width:28px;height:28px;border-radius:50%;background:var(--good);color:#fff;display:grid;place-items:center;font-weight:700;flex:none}
+.jdchip.warn .tick{background:var(--warn)}
+.jdchip.busy .tick{background:var(--accent)}
+.jdchip .meta{flex:1;min-width:0}
+.jdchip .meta strong{display:block}
+@media (prefers-reduced-motion: no-preference){ .jdchip.busy .tick{animation:spin 1s linear infinite} @keyframes spin{to{transform:rotate(360deg)}} }
+.install{display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid color-mix(in srgb,var(--line) 80%,transparent);box-shadow:var(--shadow);border-radius:18px;padding:14px 16px;margin:12px 0 4px}
+.install .ico{width:44px;height:44px;border-radius:12px;flex:none;background:linear-gradient(135deg,#2A2470,var(--accent));display:grid;place-items:center;box-shadow:var(--glow)}
+.install ol{margin:6px 0 0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;gap:3px}
+.install .x{margin-left:auto;background:none;border:0;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;padding:4px}
 .check{display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips label{cursor:pointer}
@@ -347,11 +361,14 @@ textarea:focus,input:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 
       <span>Resume <span class="mark">Match</span></span>
     </button>
     <div class="row" style="display:flex;gap:8px;align-items:center">
+      <button class="btn hidden" id="installbtn">Install app</button>
       <button class="btn iconbtn" id="theme" aria-label="Switch light or dark mode" title="Light / dark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
       <button class="btn hidden" id="to-results">Back to results</button>
       <button class="btn" id="new">New analysis</button>
     </div>
   </header>
+
+  <div id="install" class="install hidden" role="note"></div>
 
   <!-- SETUP -->
   <section id="setup" class="view hidden" aria-label="Set up an analysis">
@@ -383,16 +400,21 @@ textarea:focus,input:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><span class="num">2</span><div><h2>The job</h2><div class="hint">Paste the full description, including requirements.</div></div></div>
+        <div class="card-head"><span class="num">2</span><div><h2>The job</h2><div class="hint">Paste a job link and we'll read it. Or paste the description yourself.</div></div></div>
         <div class="stack">
           <div class="field">
-            <label for="jd">Job description</label>
+            <label for="jdlink">Job link</label>
+            <div class="linkrow">
+              <input type="url" id="jdlink" inputmode="url" autocomplete="off" placeholder="https://www.linkedin.com/jobs/view/…">
+              <button class="btn" id="readjob" type="button">Read job</button>
+            </div>
+            <span class="hint">Works with LinkedIn, Greenhouse, Lever, Ashby, SmartRecruiters and most company career pages.</span>
+          </div>
+          <div id="jdstatus" class="hidden" aria-live="polite"></div>
+          <details class="peek" id="jdpeek">
+            <summary id="jdsum">Or paste the description instead ▾</summary>
             <textarea id="jd" rows="9" placeholder="Paste the job description here: responsibilities, requirements, nice-to-haves."></textarea>
-          </div>
-          <div class="field">
-            <label for="jdlink">Job link <span class="hint">(optional, saved for your reference)</span></label>
-            <input type="url" id="jdlink" placeholder="https://www.linkedin.com/jobs/view/…">
-          </div>
+          </details>
           <div class="field">
             <span class="lbl" id="region-lbl">Where is the job?</span>
             <div class="chips" role="radiogroup" aria-labelledby="region-lbl" id="regions"></div>
@@ -402,7 +424,7 @@ textarea:focus,input:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 
     </div>
     <div class="cta">
       <button class="btn solid big" id="go">Score my match →</button>
-      <span class="hint">Takes about a minute. Job sites block other pages from reading listings, so paste the description rather than relying on the link.</span>
+      <span class="hint">Takes about a minute.</span>
     </div>
     <div id="err" class="msg err hidden" role="alert" style="margin-top:14px"></div>
   </section>
@@ -1361,12 +1383,70 @@ function cacheResult(key, ai){
   idx.slice(8).forEach(k=>store(false,k,null));       // keep the 8 most recent
   store(false,"rms.resIdx",JSON.stringify(idx.slice(0,8)));
 }
+/* ---------- read the job from a link ---------- */
+const isUrl = v => { try { const u = new URL(String(v).trim()); return /^https?:$/.test(u.protocol) && u.hostname.includes("."); } catch(e){ return false; } };
+let jdFetchFor = "", jdBusy = null;
+function jdStatus(kind, title, sub){
+  const el = $("#jdstatus");
+  if (!kind) { el.classList.add("hidden"); el.innerHTML = ""; return; }
+  el.classList.remove("hidden");
+  el.innerHTML = `<div class="jdchip ${kind}"><span class="tick">${kind==="ok"?"✓":kind==="busy"?"↻":"!"}</span><div class="meta"><strong>${esc(title)}</strong><span class="hint">${esc(sub||"")}</span></div></div>`;
+}
+async function apiPost(path, body, _retry){
+  let r;
+  try { r = await fetch(path, {method:"POST", headers:{"content-type":"application/json","x-app-key":getPasscode()}, body: JSON.stringify(body)}); }
+  catch(e){ throw new Error("Couldn't reach the server. Check your connection."); }
+  if (r.status === 401) {
+    if (_retry === 2) throw new Error("Wrong passcode.");
+    const p = await askPasscode(!!getPasscode()); if (!p) throw new Error("A passcode is needed.");
+    return apiPost(path, body, (_retry||0)+1);
+  }
+  let d = {}; try { d = await r.json(); } catch(e){}
+  if (!r.ok) throw new Error(d.message || "That didn't work. Try again.");
+  return d;
+}
+async function readJob(force){
+  const link = $("#jdlink").value.trim();
+  if (!isUrl(link)) { jdStatus("warn","That doesn't look like a link","Copy the full address of the job page, starting with https://"); return false; }
+  if (!force && jdFetchFor === link && $("#jd").value.trim().length >= 200) return true;
+  if (jdBusy) return jdBusy;
+  const key = "rms.jd." + hashStr(link);
+  jdBusy = (async ()=>{
+    $("#readjob").disabled = true;
+    jdStatus("busy","Reading the job…","Usually takes a few seconds");
+    try {
+      let d = null; try { d = JSON.parse(store(true,key)||"null"); } catch(e){}
+      if (!d || force) { d = await apiPost("/api/jd", {url: link}); store(false, key, JSON.stringify(d)); }
+      const head = [d.title, d.company].filter(Boolean).join(" · ") || "Job description";
+      const text = [d.title && `Job title: ${d.title}`, d.company && `Company: ${d.company}`, d.location && `Location: ${d.location}`, "", d.text].filter(x=>x!==undefined && x!==null && x!==false).join("\n").trim();
+      $("#jd").value = text; jdFetchFor = link;
+      if (d.region) setRegion(d.region);
+      jdStatus("ok", head, `${d.location?d.location+" · ":""}${wordCount(d.text)} words read${d.region?` · region set to ${d.region}`:""}`);
+      $("#jdpeek").open = false; $("#jdsum").textContent = "Edit the description we read ▾";
+      refreshSteps(); persistJob();
+      return true;
+    } catch(e){
+      jdStatus("warn", "Couldn't read this link", e.message);
+      $("#jdpeek").open = true; $("#jdsum").textContent = "Paste the description here ▾";
+      setTimeout(()=>$("#jd").focus(), 50);
+      return false;
+    } finally { $("#readjob").disabled = false; jdBusy = null; }
+  })();
+  return jdBusy;
+}
+function persistJob(){ store(false,"rms.draftLink",$("#jdlink").value.trim()); }
+$("#readjob").addEventListener("click", ()=>readJob(true));
+$("#jdlink").addEventListener("paste", ()=>setTimeout(()=>{ if (isUrl($("#jdlink").value)) readJob(false); }, 30));
+$("#jdlink").addEventListener("keydown", e=>{ if (e.key==="Enter") { e.preventDefault(); readJob(true); } });
+$("#jdlink").addEventListener("input", ()=>{ if ($("#jdlink").value.trim() !== jdFetchFor) jdStatus(null); });
+
 $("#go").addEventListener("click", ()=>runScore(false));
 async function runScore(force){
   showErr("");
+  if ($("#resume").value.trim().length < 200) { showErr("Add your resume first: upload a PDF or .docx, or paste the text."); return; }
+  if ($("#jd").value.trim().length < 200 && isUrl($("#jdlink").value)) { const ok = await readJob(false); if (!ok) { showErr("We couldn't read that link. Paste the job description in the box above, then score again."); return; } }
   const resume = $("#resume").value.trim(), jd = $("#jd").value.trim(), link = $("#jdlink").value.trim(), region = getRegion();
-  if (resume.length < 200) { showErr("Add your resume first: upload a PDF or .docx, or paste the text."); return; }
-  if (jd.length < 200) { showErr(link ? "Paste the job description text too. Job sites block other pages from reading their listings, so the link alone isn't enough." : "Paste the job description, including the requirements section."); return; }
+  if (jd.length < 200) { showErr("Add the job: paste a job link and tap Read job, or paste the description."); return; }
   persist();
   const btn = $("#go"); btn.disabled = true;
   $("#scan").classList.remove("hidden");
@@ -1461,6 +1541,33 @@ const EX_AI = {
  questions:[{q:"How much sales pipeline (in ₹ or $) did your Northwind LinkedIn and Google campaigns generate?",why:"The job is measured on pipeline, not MQLs."},{q:"Did you track CAC or payback period at Brightleaf? What were the numbers?",why:"CAC is a must-have keyword and a weekly metric in this role."},{q:"Have you worked with RevOps or sales on attribution or lead routing?",why:"Attribution is the biggest gap against this job."}],
  region_tips:["Keep it to two pages; Indian recruiters skim the first half page.","Mention notice period and current location near the top.","Leave out photo, date of birth and marital status."]};
 
+/* ---------- install ---------- */
+(function(){
+  const ua = navigator.userAgent, standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  if (standalone) return;
+  const iOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const box = $("#install");
+  if (iOS && store(true,"rms.iosHint") !== "hide") {
+    const inApp = /FBAN|FBAV|Instagram|LinkedInApp|Line\/|WhatsApp|Claude|GSA\//i.test(ua);
+    const safari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua) && !inApp;
+    const shareIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px" aria-label="Share"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>`;
+    box.innerHTML = `<span class="ico"><svg width="22" height="22" viewBox="0 0 18 18" aria-hidden="true"><rect x="3" y="2" width="12" height="14" rx="2" fill="#fff"/><rect x="5" y="5" width="8" height="2" rx="1" fill="#FFE14D"/><rect x="5" y="9" width="6" height="1.5" rx=".75" fill="#C9C5E4"/><rect x="5" y="12" width="7" height="1.5" rx=".75" fill="#FFE14D"/></svg></span>
+      <div><strong>Add Resume Match to your Home Screen</strong>
+      ${safari || /CriOS|FxiOS|EdgiOS/.test(ua) ? `<ol>
+        <li>Tap the Share button ${shareIcon} in the toolbar. On newer iPhones it may be inside the <strong>⋯</strong> menu.</li>
+        <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+        <li>Keep <strong>Open as Web App</strong> on, then tap <strong>Add</strong>.</li></ol>`
+      : `<ol><li>This app can't be installed from inside another app.</li><li>Tap <strong>⋯</strong> or the compass icon and choose <strong>Open in Safari</strong>.</li><li>Then come back here for the next step.</li></ol>`}</div>
+      <button class="x" aria-label="Hide install tip">×</button>`;
+    box.classList.remove("hidden");
+    box.querySelector(".x").onclick = () => { box.classList.add("hidden"); store(false,"rms.iosHint","hide"); };
+  }
+  let deferred = null;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; $("#installbtn").classList.remove("hidden"); });
+  $("#installbtn").addEventListener("click", async ()=>{ if (!deferred) return; deferred.prompt(); const c = await deferred.userChoice; deferred = null; $("#installbtn").classList.add("hidden"); if (c && c.outcome==="accepted") toast("Installed"); });
+  window.addEventListener("appinstalled", ()=>$("#installbtn").classList.add("hidden"));
+})();
+
 /* ---------- theme ---------- */
 (function(){
   const saved = store(true,"rms.theme"); if (saved) document.documentElement.dataset.theme = saved;
@@ -1483,7 +1590,7 @@ const EX_AI = {
     const R = compute(last.resume,last.ai,last.fileType);
     CTX = {resume:last.resume, jd:last.jd||"", region:last.region||"India", link:last.link, R, answers:last.answers}; TAILORED = last.tailored || null;
     if (last.jd) $("#jd").value = last.jd;
-    if (last.link) $("#jdlink").value = last.link;
+    if (last.link) { $("#jdlink").value = last.link; if (last.jd) { jdFetchFor = last.link; } }
     if (last.region) setRegion(last.region);
     render(R,{link:last.link,region:last.region});
   } else {

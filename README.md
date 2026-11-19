@@ -2,6 +2,10 @@
 
 Score your resume against any job description: ATS check, keyword match, job fit, and a tailored resume you can download as .docx or PDF. Installable on Android and iPhone as an app (PWA).
 
+## Reading jobs from a link
+
+Paste a job link and tap **Read job**. The server reads LinkedIn job pages, Greenhouse, Lever, Ashby and SmartRecruiters through their public job data, and any career page that includes standard job-posting data. Sites that need a sign-in or block bots, such as Naukri, show a message asking you to paste the description instead.
+
 ## How it's built
 
 - `public/`: the app, a single `index.html` plus the manifest, service worker and icons. No build step.
@@ -25,7 +29,7 @@ The Worker name in `wrangler.jsonc` must match the Worker's name in Cloudflare (
 ## Install on your phone
 
 - **Android (Chrome):** open the site, then tap **⋮ → Add to Home screen → Install**.
-- **iPhone (Safari):** open the site, then tap **Share → Add to Home Screen**.
+- **iPhone:** open the site in **Safari**, not inside another app. Tap **Share** (on newer iOS it may be under the **⋯** menu), then **Add to Home Screen**, keep **Open as Web App** on, and tap **Add**. The app shows these steps itself on iPhone.
 
 ## Cost
 
