@@ -402,6 +402,97 @@ textarea:focus,input:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 
   .appcard .meta{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
   .kpi .v{font-size:23px}
 }
+
+/* ===== Mobile-first fit pass ===== */
+html,body{overflow-x:clip;max-width:100%}
+.grid2>*,.grid-kw>*,.improve>*,.setup-grid>*,.col>*,.dgrid>*,.kpis>*,.scores>*,.steps>*,.stack>*{min-width:0}
+.resume-view,td.wrap,.log .m,.job,.hint a,.fix .d,.gap .fx,.rw-item,.paper{overflow-wrap:anywhere}
+img,svg{max-width:100%}
+@media (max-width:760px){
+  body{font-size:15px}
+  .shell{padding-left:max(14px, env(safe-area-inset-left));padding-right:max(14px, env(safe-area-inset-right))}
+  .appbar{margin:0 calc(-1 * max(14px, env(safe-area-inset-left)));padding:10px 14px}
+  /* iOS zooms into any field under 16px; keep them at 16px */
+  input,textarea,select{font-size:16px !important}
+  .intro{padding:10px 0 16px}
+  .intro p{font-size:15.5px}
+  .card,.panel{padding:16px;border-radius:18px}
+  .card-head{margin-bottom:12px}
+  .drop{padding:20px 12px}
+  .linkrow .btn{padding:8px 12px}
+  .cta{margin-top:16px}
+  .cta .btn.big{width:100%;justify-content:center}
+  /* results */
+  .banner{padding:12px 14px;font-size:14px}
+  .banner .btn{width:100%;justify-content:center}
+  .hero{padding:18px;gap:14px;justify-items:center;text-align:center}
+  .hero .gauge{width:138px;height:138px}
+  .hero h1{font-size:22px;margin:4px 0 8px}
+  .hero p{font-size:14.5px}
+  .hero .acts{justify-content:center}
+  .hero .acts .btn{flex:1 1 140px;justify-content:center}
+  .scores{grid-template-columns:1fr 1fr;gap:10px}
+  .score{padding:12px;gap:6px}
+  .score .top{flex-direction:column-reverse;align-items:flex-start;gap:2px}
+  .score .n{font-size:26px}
+  .score .name{font-size:13px}
+  .score .sub{font-size:11.5px;line-height:1.35}
+  .sec-head{margin-bottom:10px}
+  h2{font-size:16.5px}
+  .fix{grid-template-columns:28px 1fr;gap:10px;padding:12px}
+  .fix .btn{grid-column:2;justify-self:start;padding:6px 12px;font-size:13px}
+  .ck{font-size:14px}
+  table{font-size:13.5px}
+  th,td{padding:8px 6px}
+  .resume-view{padding:14px;font-size:13px;max-height:420px}
+  .filters .btn{padding:5px 10px}
+  /* improve */
+  .cf{padding:12px}
+  .cf-top{flex-direction:column;align-items:stretch}
+  .seg{width:100%}
+  .seg button{flex:1;padding:9px 6px}
+  .tailor-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .tailor-actions #build{grid-column:1 / -1}
+  .tailor-actions .btn{justify-content:center}
+  .paper{padding:20px 16px;font-size:12px;max-height:none}
+  .paper .nm{font-size:20px}
+  .paper .hl{font-size:12.5px}
+  .paper .ct{font-size:11px}
+  .paper .r1{flex-wrap:wrap;gap:0 10px;font-size:12.5px}
+  .paper .r1 .dt,.paper .r2{font-size:11.5px}
+  .rw-item{padding:12px}
+  /* dashboard */
+  .dash-head{padding:12px 0}
+  .dash-head > div:last-child{width:100%}
+  .dash-head .btn{flex:1;justify-content:center}
+  .kpis{gap:10px}
+  .kpi{padding:14px;border-radius:16px}
+  .minis{gap:6px}
+  .mini{font-size:12.5px;padding:4px 10px}
+  .log .row{grid-template-columns:28px 1fr;gap:10px}
+  .log .c{grid-column:2;text-align:left;display:flex;gap:8px;align-items:baseline}
+  .log .c small{display:inline}
+  /* overlays */
+  .scan-card{padding:20px;gap:16px}
+  .install{padding:12px 14px}
+}
+@media (max-width:370px){
+  .scores{grid-template-columns:1fr 1fr}
+  .score .sub{display:none}
+  .tabs button{font-size:10px}
+}
+
+@media (max-width:760px){
+  .money th:nth-child(3),.money td:nth-child(3){display:none}
+  .kwt thead{display:none}
+  .kwt tr{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .kwt td{border:0;padding:0}
+  .kwt td:nth-child(1){grid-column:1;grid-row:1 / span 2}
+  .kwt td:nth-child(3){grid-column:2;grid-row:1;justify-self:end}
+  .kwt td:nth-child(2){grid-column:2;grid-row:2;justify-self:end;font-size:12px}
+  .kwt td:nth-child(4){display:none}
+  .kwt td[colspan]{grid-column:1 / -1}
+}
 </style>
 </head>
 <body>
@@ -544,19 +635,19 @@ function loadScript(src){
     document.head.appendChild(s);
   }));
 }
-async function need(name){ for (const u of LIBS[name]) await loadScript(u); }
+async function needLib(name){ for (const u of LIBS[name]) await loadScript(u); }
 async function readFile(file){
   const name = file.name.toLowerCase();
   if (name.endsWith(".txt")) return {text: await file.text(), type:"txt"};
   const buf = await file.arrayBuffer();
   if (name.endsWith(".docx")) {
-    await need("mammoth");
+    await needLib("mammoth");
     if (!window.mammoth) throw new Error("The Word reader didn't load. Paste your resume text instead.");
     const r = await mammoth.extractRawText({arrayBuffer: buf});
     return {text: r.value, type:"docx"};
   }
   if (name.endsWith(".pdf")) {
-    await need("pdf");
+    await needLib("pdf");
     if (!window.pdfjsLib) throw new Error("The PDF reader didn't load. Paste your resume text instead.");
     const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported:false}).promise;
     let out = [];
@@ -879,7 +970,7 @@ function render(R, meta){
         <div class="sec-head"><h2>Keyword coverage</h2>
           <div class="filters" id="kwf">${["all","missing","found"].map(f=>`<button class="btn ${kwFilter===f?"on":""}" data-f="${f}">${f[0].toUpperCase()+f.slice(1)}</button>`).join("")}</div></div>
         <p class="hint" style="margin-bottom:10px">"Wording fix" means your resume suggests you have it, just not in the words an ATS searches for.</p>
-        <div class="tablewrap"><table><thead><tr><th>Keyword</th><th>Priority</th><th>Status</th><th class="hits">Hits</th></tr></thead><tbody id="kwbody"></tbody></table></div>
+        <div class="tablewrap"><table class="kwt"><thead><tr><th>Keyword</th><th>Priority</th><th>Status</th><th class="hits">Hits</th></tr></thead><tbody id="kwbody"></tbody></table></div>
         <div class="row" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn" id="copykw">Copy missing keywords</button><button class="btn solid" data-go="improve">Add the ones I have →</button></div>
       </div>
       <div class="panel sticky">
@@ -1260,7 +1351,7 @@ function buildDocxXml(T, rels = []){
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${P.join("")}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="900" w:right="${MAR}" w:bottom="900" w:left="${MAR}" w:header="500" w:footer="500" w:gutter="0"/></w:sectPr></w:body></w:document>`;
 }
 async function buildDocx(T){
-  await need("jszip");
+  await needLib("jszip");
   if (!window.JSZip) throw new Error("The Word builder didn't load. Reload the page and try again.");
   const z = new JSZip();
   z.file("[Content_Types].xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`);
@@ -1276,7 +1367,7 @@ async function buildDocx(T){
 /* PDF: real text (not an image), Helvetica, single column */
 function ps(s){ return String(s??"").replace(/₹\s?/g,"INR ").replace(/[–—]/g,"-").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[•●▪]/g,"-").replace(/…/g,"...").replace(/[^\x00-\xFF]/g,""); }
 async function buildPdf(T){
-  await need("jspdf");
+  await needLib("jspdf");
   if (!window.jspdf) throw new Error("The PDF builder didn't load. Reload the page and try again.");
   const doc = new window.jspdf.jsPDF({unit:"pt", format:"a4"});
   const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 50, TW = W-2*M;
@@ -1707,7 +1798,7 @@ function renderDash(){
     <div class="dgrid">
       <div class="panel"><div class="sec-head"><h2>Spend, last 30 days</h2><span class="hint">tap a bar</span></div>${chart}<div class="tip" id="ctip">${days.some(x=>x.usd)?"":"No spend in the last 30 days yet."}</div></div>
       <div class="panel"><div class="sec-head"><h2>Where the money goes</h2></div>
-        <div class="tablewrap"><table class="tbl"><thead><tr><th>Action</th><th class="r">Count</th><th class="r">Tokens</th><th class="r">Cost</th></tr></thead><tbody>
+        <div class="tablewrap"><table class="tbl money"><thead><tr><th>Action</th><th class="r">Count</th><th class="r">Tokens</th><th class="r">Cost</th></tr></thead><tbody>
         ${byType.length ? byType.map(t=>`<tr><td>${esc((EV[t.type]||[t.type])[0])}${t.failed?` <span class="pill p-bad">${t.failed} failed</span>`:""}</td><td class="r">${t.n}</td><td class="r">${(+t.in_tok + +t.out_tok)?fmtTok(+t.in_tok + +t.out_tok):"–"}</td><td class="r"><strong>${+t.usd?I(t.usd):"Free"}</strong></td></tr>`).join("") : `<tr><td colspan="4" class="empty">Nothing yet. Score a job to start tracking.</td></tr>`}
         </tbody></table></div>
         <p class="hint" style="margin-top:10px">AI cost uses Anthropic's reported tokens for each call at Sonnet list prices ($2 in / $10 out per million tokens), converted at ₹${rate} per $.</p>
