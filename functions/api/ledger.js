@@ -7,7 +7,7 @@ const CLIENT_EVENTS = ["download_docx", "download_pdf", "score_saved"];
 export async function onRequest({ request, env, ctx }) {
   if (env.APP_PASSCODE && request.headers.get("x-app-key") !== env.APP_PASSCODE) return json({ error: "passcode", message: "Passcode required." }, 401);
   const ledger = ledgerOf(env);
-  if (!ledger) return json({ error: "no_ledger", message: "The activity log isn't set up on this server. Redeploy with the latest wrangler.jsonc." }, 501);
+  if (!ledger) return json({ error: "no_ledger", message: "The activity log isn't switched on yet on your server, so nothing is being recorded. Everything else in the app works normally." }, 501);
   const url = new URL(request.url);
   if (request.method === "GET") {
     if (url.searchParams.get("format") === "csv") {
